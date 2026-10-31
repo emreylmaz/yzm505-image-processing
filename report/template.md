@@ -29,6 +29,7 @@ bash report/build.sh             # bu rapor (.md + .docx)
 6. **Q2 — operatörler:** Sobel ve Canny bu soruda dönüşümleri analiz eden araçlardır; OpenCV ile hesaplanmıştır. Geometrik dönüşümler ve her iki interpolasyon manueldir.
 7. **Q3 — boyut:** Çıkış boyutu round(1.7·N) olarak alınmıştır ({{q3.input.shape}} → {{q3.resize.out_shape}}). Koordinat oranı, OpenCV'nin `dsize` verildiğinde kullandığı gibi giriş/çıkış boyutu oranıdır (1/1.7 değil).
 8. **Giriş formatı:** `.tif` dosyaları `uint8` değilse [0, 255] aralığına lineer ölçeklenir (ör. MATLAB `checkerboard` görüntüsü `double` tipindedir).
+9. **Giriş kaynağı:** `pout.tif`, `tire.tif`, `cameraman.tif` MATLAB Image Processing Toolbox'ın orijinal demo dosyalarıdır. MATLAB'da hazır bir `checkerboard.tif` dosyası yoktur; `checkerboard` bir fonksiyondur. Bu dosya, `I = checkerboard; imwrite(I, 'checkerboard.tif')` ile birebir aynı algoritmayla `tools/make_checkerboard.py` tarafından üretilmiştir. Varsayılan parametreler n = 10 ve p = q = 4'tür; sonuç 80×80 boyutundadır, sağ yarıdaki açık kareler 0.7 gri tonundadır (uint8'de 179). Eğitmenin dosyası farklıysa yalnızca `data/checkerboard.tif` değiştirilip pipeline yeniden çalıştırılır.
 
 ---
 
