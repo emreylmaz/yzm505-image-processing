@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
-import sys
-
 import math
+import sys
 import time
 
 import numpy as np
