@@ -31,7 +31,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "NPY"]
-ignore = ["E741"]
+ignore = ["E741", "E501"]  # satır uzunluğu ruff format ile yönetilir; uzun string/yorumlar serbest
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
