@@ -30,7 +30,9 @@ def test_laplacian_linear_ramp_is_zero_inside(ramp4):
 
 @pytest.mark.parametrize("border", ["reflect101", "replicate", "zero"])
 def test_laplacian_loops_equal_vec(rand_u8, border):
-    assert np.array_equal(F.laplacian_loops(rand_u8, border=border), F.laplacian_vec(rand_u8, border=border))
+    assert np.array_equal(
+        F.laplacian_loops(rand_u8, border=border), F.laplacian_vec(rand_u8, border=border)
+    )
 
 
 @pytest.mark.parametrize("border", ["reflect101", "replicate", "zero"])

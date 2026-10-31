@@ -6,14 +6,16 @@ Tüm modüller içeride float64 çalışır; uint8'e dönüşüm yalnızca en so
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 
 import numpy as np
 import tifffile
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = ROOT / "data"
-OUTPUT_DIR = ROOT / "outputs"
+# Ortam değişkeni override'ı yalnızca duman testleri içindir (ör. scratchpad'de sentetik veriyle).
+DATA_DIR = Path(os.environ.get("IP_DATA_DIR", ROOT / "data"))
+OUTPUT_DIR = Path(os.environ.get("IP_OUTPUT_DIR", ROOT / "outputs"))
 
 
 def require_data(name: str) -> Path:

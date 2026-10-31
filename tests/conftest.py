@@ -5,7 +5,7 @@ import pytest
 @pytest.fixture
 def ramp4():
     """4×4 ramp: değer = 10·(y*4 + x)."""
-    return (np.arange(16, dtype=np.float64).reshape(4, 4) * 10.0)
+    return np.arange(16, dtype=np.float64).reshape(4, 4) * 10.0
 
 
 @pytest.fixture
