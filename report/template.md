@@ -64,9 +64,9 @@ CDF_min, görüntüdeki en koyu mevcut seviyenin CDF değeridir; bu sayede en ko
 
 {{table:q1_enhance:pout}}
 
-Orijinal pout görüntüsü yalnızca [{{q1.pout.enhance.original.min}}, {{q1.pout.enhance.original.max}}] aralığını kullanmaktadır. Her iki yöntem de çıktıyı tam [0, 255] aralığına yaymıştır. Contrast Stretching histogramın şeklini koruyarak yalnızca genişletir (seviye sayısı {{q1.pout.enhance.stretch.n_levels}}); HE ise CDF'i doğrusallaştırır: CDF'in ideal doğrudan maksimum sapması orijinalde {{q1.pout.enhance.original.cdf_linearity_max_dev|.3f}} iken HE sonrası {{q1.pout.enhance.he.cdf_linearity_max_dev|.3f}} değerine düşmüştür.
+Orijinal pout görüntüsü yalnızca [{{q1.pout.enhance.original.min}}, {{q1.pout.enhance.original.max}}] aralığını kullanmaktadır. Her iki yöntem de çıktıyı tam [0, 255] aralığına yaymıştır. Contrast Stretching histogramın şeklini koruyarak yalnızca genişletir (seviye sayısı: {{q1.pout.enhance.stretch.n_levels}}); HE ise CDF'i doğrusallaştırır. Normalize CDF'in ideal lineer CDF'ten (k/255) maksimum sapması orijinalde {{q1.pout.enhance.original.cdf_linearity_max_dev|.3f}}, HE sonrası {{q1.pout.enhance.he.cdf_linearity_max_dev|.3f}} olarak ölçülmüştür.
 
-**Built-in karşılaştırma:** Manuel HE ile `cv2.equalizeHist` arasındaki maksimum fark {{q1.pout.enhance.he_vs_cv2_equalizeHist.max_abs_diff}} gri seviyedir (aynı formül; olası ±1 fark OpenCV'nin float32 ölçek katsayısı ve yuvarlama kuralından kaynaklanır). `skimage.exposure.equalize_hist` ile fark daha büyüktür (maksimum {{q1.pout.enhance.he_vs_skimage_equalize_hist.max_abs_diff}}, ortalama {{q1.pout.enhance.he_vs_skimage_equalize_hist.mean_abs_diff|.2f}}): scikit-image CDF_min'i çıkarmaz ve [0, 1] aralığında kayan noktalı çıktı üretir; yani formül tanımı farklıdır.
+**Built-in karşılaştırma.** {{auto:he_cv2:pout}} `skimage.exposure.equalize_hist` ile karşılaştırmada (skimage'ın [0, 1] float çıktısı ×255 ile ölçeklenip yuvarlanmıştır) fark: maksimum {{q1.pout.enhance.he_vs_skimage_equalize_hist.max_abs_diff}}, ortalama {{q1.pout.enhance.he_vs_skimage_equalize_hist.mean_abs_diff|.2f}}. scikit-image CDF_min'i çıkarmaz ve histogramı bin merkezleri üzerinden enterpole eder; yani formül tanımı farklıdır.
 
 ### 1.4 Sonuçlar: tire.tif
 
@@ -76,11 +76,11 @@ Orijinal pout görüntüsü yalnızca [{{q1.pout.enhance.original.min}}, {{q1.po
 
 {{table:q1_enhance:tire}}
 
-Orijinal tire görüntüsü [{{q1.tire.enhance.original.min}}, {{q1.tire.enhance.original.max}}] aralığında ve ortalaması {{q1.tire.enhance.original.mean|.1f}} olan karanlık bir görüntüdür. HE sonrası ortalama {{q1.tire.enhance.he.mean|.1f}} değerine çıkmış, CDF sapması {{q1.tire.enhance.original.cdf_linearity_max_dev|.3f}} → {{q1.tire.enhance.he.cdf_linearity_max_dev|.3f}} olmuştur. Manuel HE ile `cv2.equalizeHist` maksimum farkı: {{q1.tire.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}.
+Orijinal tire görüntüsü [{{q1.tire.enhance.original.min}}, {{q1.tire.enhance.original.max}}] aralığında ve ortalaması {{q1.tire.enhance.original.mean|.1f}} olan karanlık bir görüntüdür. HE sonrası ortalama {{q1.tire.enhance.he.mean|.1f}} olmuş, CDF sapması {{q1.tire.enhance.original.cdf_linearity_max_dev|.3f}} → {{q1.tire.enhance.he.cdf_linearity_max_dev|.3f}} olarak ölçülmüştür. {{auto:he_cv2:tire}}
 
 ### 1.5 Filtreler: Mean, Median ve Gaussian
 
-Üç filtre de NumPy ile manuel olarak yazılmıştır (pencereler `sliding_window_view` ile oluşturulur). **Border (padding) modları:** Mean ve Gaussian için `reflect101` (…c b | a b c | b a…, OpenCV varsayılanı `BORDER_REFLECT_101`), Median için `replicate` (…a a | a b c | c c…, `cv2.medianBlur`'un sabit kullandığı mod). Aynı border ile OpenCV karşılıklarına göre maksimum fark testlerde ≤ 1 gri seviyedir (OpenCV'nin `uint8` için sabit noktalı aritmetiğinden kaynaklı yuvarlama).
+Üç filtre de NumPy ile manuel olarak yazılmıştır (pencereler `sliding_window_view` ile oluşturulur). **Border (padding) modları:** Mean ve Gaussian için `reflect101` (…c b | a b c | b a…, OpenCV varsayılanı `BORDER_REFLECT_101`), Median için `replicate` (…a a | a b c | c c…, `cv2.medianBlur`'un sabit kullandığı mod). {{auto:builtin_filters}} Olası ±1 farklar OpenCV'nin `uint8` için sabit noktalı aritmetiğinden kaynaklanan yuvarlamadır (birim testleri: `tests/test_filters.py::test_*_vs_builtin`).
 
 {{code:ip.filters.mean_filter}}
 
@@ -138,7 +138,9 @@ Aşağıdaki zoom görüntüleri, HE görüntüsünde nesne kenar yoğunluğunun
 
 **Neden farklı davranıyorlar?** Mean filtresi bir lineer alçak geçiren filtredir: kenarın iki yanındaki koyu ve açık pikselleri **ortalar**, dolayısıyla basamak şeklindeki kenar k piksel genişliğinde bir rampaya dönüşür (profilde eğimin yayılması). Median filtresi ise lineer değildir: pencere bir kenarı kestiğinde çoğunluk tarafın değerini **seçer**, ara değer üretmez; bu nedenle basamak kenarlar korunur ve tekil (impulsif) aykırı değerler tamamen elenir.
 
-Sayısal olarak, 3×3 pencerede keskinlik korunumu pout için Mean {{q1.pout.verdict.he.mean_vs_median.k3.mean_sharpness_retained_pct|.1f}}% / Median {{q1.pout.verdict.he.mean_vs_median.k3.median_sharpness_retained_pct|.1f}}%, tire için Mean {{q1.tire.verdict.he.mean_vs_median.k3.mean_sharpness_retained_pct|.1f}}% / Median {{q1.tire.verdict.he.mean_vs_median.k3.median_sharpness_retained_pct|.1f}}%; 5×5 pencerede pout için Mean {{q1.pout.verdict.he.mean_vs_median.k5.mean_sharpness_retained_pct|.1f}}% / Median {{q1.pout.verdict.he.mean_vs_median.k5.median_sharpness_retained_pct|.1f}}%, tire için Mean {{q1.tire.verdict.he.mean_vs_median.k5.mean_sharpness_retained_pct|.1f}}% / Median {{q1.tire.verdict.he.mean_vs_median.k5.median_sharpness_retained_pct|.1f}}% olarak ölçülmüştür. Aynı pencere boyutunda gürültü azalması ise pout için Mean {{q1.pout.verdict.he.mean_vs_median.k3.mean_noise_reduction_pct|.1f}}% / Median {{q1.pout.verdict.he.mean_vs_median.k3.median_noise_reduction_pct|.1f}}% (3×3) şeklindedir.
+Sayısal olarak, 3×3 pencerede keskinlik korunumu pout için Mean %{{q1.pout.verdict.he.mean_vs_median.k3.mean_sharpness_retained_pct|.1f}} / Median %{{q1.pout.verdict.he.mean_vs_median.k3.median_sharpness_retained_pct|.1f}}, tire için Mean %{{q1.tire.verdict.he.mean_vs_median.k3.mean_sharpness_retained_pct|.1f}} / Median %{{q1.tire.verdict.he.mean_vs_median.k3.median_sharpness_retained_pct|.1f}}; 5×5 pencerede pout için Mean %{{q1.pout.verdict.he.mean_vs_median.k5.mean_sharpness_retained_pct|.1f}} / Median %{{q1.pout.verdict.he.mean_vs_median.k5.median_sharpness_retained_pct|.1f}}, tire için Mean %{{q1.tire.verdict.he.mean_vs_median.k5.mean_sharpness_retained_pct|.1f}} / Median %{{q1.tire.verdict.he.mean_vs_median.k5.median_sharpness_retained_pct|.1f}} olarak ölçülmüştür.
+
+Düz bölge gürültü azalması (Mean / Median): pout 3×3 %{{q1.pout.verdict.he.mean_vs_median.k3.mean_noise_reduction_pct|.1f}} / %{{q1.pout.verdict.he.mean_vs_median.k3.median_noise_reduction_pct|.1f}}, pout 5×5 %{{q1.pout.verdict.he.mean_vs_median.k5.mean_noise_reduction_pct|.1f}} / %{{q1.pout.verdict.he.mean_vs_median.k5.median_noise_reduction_pct|.1f}}, tire 3×3 %{{q1.tire.verdict.he.mean_vs_median.k3.mean_noise_reduction_pct|.1f}} / %{{q1.tire.verdict.he.mean_vs_median.k3.median_noise_reduction_pct|.1f}}, tire 5×5 %{{q1.tire.verdict.he.mean_vs_median.k5.mean_noise_reduction_pct|.1f}} / %{{q1.tire.verdict.he.mean_vs_median.k5.median_noise_reduction_pct|.1f}}.
 
 ### 1.8 Ek Deney: Salt & Pepper Gürültüsü
 
@@ -150,16 +152,15 @@ Sayısal olarak, 3×3 pencerede keskinlik korunumu pout için Mean {{q1.pout.ver
 
 {{table:q1_sp:tire}}
 
-İmpulsif gürültüde PSNR açısından en iyi filtre pout için **{{q1.pout.verdict.he.saltpepper_best_psnr}}**, tire için **{{q1.tire.verdict.he.saltpepper_best_psnr}}** olmuştur. Mean ve Gaussian filtreler 0/255 değerli aykırı pikselleri komşularına yayarak gri lekeler bırakırken, Median bu pikselleri sıralamada uçlara attığı için doğrudan eler.
+{{auto:sp_best}} Mean ve Gaussian filtreler 0/255 değerli aykırı pikselleri komşularına yayarak gri lekeler bırakır (zoom panelleri); Median ise bu pikselleri sıralamada uçlara attığı için, pencerede çoğunlukta olmadıkları sürece çıktıya taşımaz.
 
 ### 1.9 Cevap: Hangi filtre gürültüyü temizlerken keskinliği daha iyi korudu?
 
-- **Keskinlik korunumu** açısından en iyi filtre pout'ta **{{q1.pout.verdict.he.best_sharpness_only}}**, tire'da **{{q1.tire.verdict.he.best_sharpness_only}}** olmuştur (Tablo 1.6, zoom ve profil figürleri).
-- **Gürültü azaltma ile keskinlik arasındaki denge skoru** en yüksek filtre pout'ta **{{q1.pout.verdict.he.best_label}}**, tire'da **{{q1.tire.verdict.he.best_label}}** olmuştur.
-- **İmpulsif (salt & pepper) gürültüde** açık ara en iyi sonuç **{{q1.pout.verdict.he.saltpepper_best_psnr}}** ile alınmıştır (Bölüm 1.8).
-- Gaussian filtrede σ arttıkça gürültü azalması artar ancak kenar keskinliği belirgin şekilde düşer (pout: σ=1 → {{q1.pout.filters.he.filters.gauss_s1.sharpness_retained_pct|.1f}}%, σ=2 → {{q1.pout.filters.he.filters.gauss_s2.sharpness_retained_pct|.1f}}% korunum).
+Aşağıdaki değerlendirme Bölüm 1.6 tablolarındaki ve Bölüm 1.7–1.8'deki sayılardan otomatik türetilmiştir:
 
-**Sonuç:** Nesne kenarlarını koruma ölçütünde Median filtre Mean filtreden üstündür: aynı pencere boyutunda daha yüksek kenar keskinliği korur ve impulsif gürültüyü tamamen temizler. Lineer filtreler (Mean, Gaussian) düz bölgelerdeki ince taneli gürültüyü daha güçlü bastırabilir, fakat bunu kenarları bulanıklaştırma pahasına yapar. Bu nedenle "gürültüyü temizlerken keskinliği koruma" sorusunun cevabı, yukarıdaki görsel kanıtlar ve ölçümlerle birlikte **Median filtre (özellikle 3×3)** olarak verilmiştir.
+{{auto:q1_conclusion}}
+
+Gaussian filtrede σ büyüdükçe gürültü azalması artar, kenar keskinliği ise düşer (pout keskinlik korunumu: σ=1 → %{{q1.pout.filters.he.filters.gauss_s1.sharpness_retained_pct|.1f}}, σ=2 → %{{q1.pout.filters.he.filters.gauss_s2.sharpness_retained_pct|.1f}}; tire: σ=1 → %{{q1.tire.filters.he.filters.gauss_s1.sharpness_retained_pct|.1f}}, σ=2 → %{{q1.tire.filters.he.filters.gauss_s2.sharpness_retained_pct|.1f}}).
 
 ---
 
@@ -186,9 +187,19 @@ Bir affine dönüşüm, giriş koordinatını (x, y) çıkış koordinatına (x'
 
 **Aliasing'siz referans:** NN ve Bilinear sonuçlarını nesnel olarak değerlendirmek için her çıkış pikselinde 8×8 = 64 alt-piksel konumunda örnekleme yapılıp ortalaması alınan (supersampling, box filtre) bir referans dönüşüm üretilmiştir. Bu, parça parça sabit checkerboard'un ideal alan-ortalamalı dönüşümüne çok yakındır.
 
-**Built-in kontrol:** Manuel dönüşümler `cv2.warpAffine` ile karşılaştırılmıştır. Bilinear'daki küçük farklar, OpenCV'nin alt-piksel konumunu 1/32'ye nicelemesinden (INTER_TAB_SIZE = 32) ve sabit noktalı ağırlıklarından kaynaklanır:
+**Built-in kontrol:** Manuel dönüşümler `cv2.warpAffine` ile karşılaştırılmıştır. Bilinear'daki küçük farklar, OpenCV'nin alt-piksel konumunu 1/32'ye nicelemesinden (INTER_TAB_SIZE = 32) ve sabit noktalı ağırlıklarından kaynaklanır.
 
 {{table:q2_cv2}}
+
+{{auto:q2_nn_cv2}}
+
+**Kenar operatörleri ve metrik kodu** (Sobel ve Canny OpenCV ile; gradyan yönü analizi):
+
+{{code:ip.edges.sobel}}
+
+{{code:ip.edges.canny}}
+
+{{code:ip.edges.orientation_stats}}
 
 ### 2.2 Dönüşüm Sonuçları
 
@@ -228,11 +239,11 @@ Aşağıdaki kırpmalar **sabit ROI koordinatlarıyla** programatik olarak alın
 
 **Açıklama.** NN interpolasyonu her çıkış pikseline en yakın kaynak pikselin değerini kopyalar ve ara değer üretmez. 30° eğik bir karo kenarı bu nedenle yatay ve dikey basamaklardan oluşan bir merdiven (staircase / jaggies) şeklinde örneklenir: kenar boyunca birkaç piksel yatay ilerler, sonra 1 piksel dikey zıplar. Sobel operatörü yerel türev aldığı için bu basamakların **her birini ayrı bir yatay veya dikey mini kenar** olarak algılar:
 
-1. Gradyan yönü, gerçek kenarın normali olan {{q2.cases.rot30_nn.expected_gradient_deg.0|.0f}}° / {{q2.cases.rot30_nn.expected_gradient_deg.1|.0f}}° yerine 0° ve 90°'ye kayar (yön histogramında NN eğrisinin eksenlerde biriken bileşenleri; güçlü piksellerin %{{q2.cases.rot30_nn.edges.orientation.pct_off_axis_gt10deg|.1f}}'i beklenen yönden 10°'den fazla sapar, Bilinear'da %{{q2.cases.rot30_bilinear.edges.orientation.pct_off_axis_gt10deg|.1f}}).
+1. Gradyan yönü, gerçek kenarın normali olan {{q2.cases.rot30_nn.expected_gradient_deg.0|.0f}}° / {{q2.cases.rot30_nn.expected_gradient_deg.1|.0f}}° yerine 0° ve 90°'ye kayar (yön histogramında NN eğrisinin eksenlerde biriken bileşenleri; beklenen yönden 10°'den fazla sapan güçlü piksel oranı: NN %{{q2.cases.rot30_nn.edges.orientation.pct_off_axis_gt10deg|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.orientation.pct_off_axis_gt10deg|.1f}}).
 2. Kenar şiddeti basamak köşelerinde tam kontrastla sıçrar, basamakların ortasında ise farklı davranır; Sobel çıktısı düzgün bir çizgi yerine kesikli ve kalınlığı değişen bir desen gösterir. Bu, gerçek sahnede bulunmayan **hatalı (false) kenar** enerjisidir (fazla enerji: NN %{{q2.cases.rot30_nn.edges.sobel_excess_energy_pct|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.sobel_excess_energy_pct|.1f}}).
-3. Canny, inceltme (non-maximum suppression) ve histerezis sonrası bu basamakları takip eder; kenar zinciri gerçek eğik çizgi yerine merdiven biçimini izler (Canny konum uyumsuzluğu: NN %{{q2.cases.rot30_nn.edges.canny_exact_mismatch_pct|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.canny_exact_mismatch_pct|.1f}}).
+3. Canny, inceltme (non-maximum suppression) ve histerezis sonrası bu basamakları takip eder; zoom panellerinde NN Canny zincirinin eğik çizgi yerine basamaklı ilerlediği görülür. {{auto:q2_canny}}
 
-Bilinear interpolasyon ise kenarı geçen piksellere ara gri değerler verir (doğal anti-aliasing); Sobel yanıtı kenar boyunca sürekli kalır ve yönü gerçek kenar normaline yakındır. Bunun bedeli, kenarın yaklaşık 1 piksel yumuşamasıdır. Aynı etki shear görüntüsünde de görülür (Sobel MAE: NN {{q2.cases.shear_nn.edges.sobel_mae_vs_reference|.1f}}, Bilinear {{q2.cases.shear_bilinear.edges.sobel_mae_vs_reference|.1f}}).
+Bilinear interpolasyon ise kenarı geçen piksellere ara gri değerler verir (doğal anti-aliasing); Sobel yanıtı kenar boyunca sürekli kalır ve yönü gerçek kenar normaline yakındır. Bunun bedeli, kenar geçişinin tek bir basamak yerine ara gri seviyelerle yayılmasıdır (zoom panellerindeki "Bilinear: görüntü"). Aynı etki shear görüntüsünde de görülür (Sobel MAE: NN {{q2.cases.shear_nn.edges.sobel_mae_vs_reference|.1f}}, Bilinear {{q2.cases.shear_bilinear.edges.sobel_mae_vs_reference|.1f}}).
 
 ---
 
@@ -288,7 +299,7 @@ Görüntü önce `reflect101` modunda 1 piksel padding'lenir; ardından dört i�
 
 {{fig:q3/fig_sharpen_zoom.png|Keskinleştirme öncesi/sonrası zoom}}
 
-Laplacian yanıtı [{{q3.laplacian.range.0|.0f}}, {{q3.laplacian.range.1|.0f}}] aralığındadır ve piksellerin %{{q3.laplacian.pct_negative|.1f}}'i negatiftir. Keskinleştirme sonrası piksellerin %{{q3.sharpen.pct_clipped_low|.2f}}'si 0'ın altına, %{{q3.sharpen.pct_clipped_high|.2f}}'si 255'in üstüne çıktığı için clip'lenmiştir.
+Laplacian yanıtı [{{q3.laplacian.range.0|.0f}}, {{q3.laplacian.range.1|.0f}}] aralığındadır (negatif piksel oranı: %{{q3.laplacian.pct_negative|.1f}}). Keskinleştirme sonrası clip'lenen piksel oranları: 0'ın altında %{{q3.sharpen.pct_clipped_low|.2f}}, 255'in üstünde %{{q3.sharpen.pct_clipped_high|.2f}}.
 
 ### 3.5 Manuel ve Built-in Karşılaştırması
 
@@ -302,19 +313,19 @@ Built-in referanslar: `cv2.resize(..., interpolation=cv2.INTER_LINEAR)` (aynı `
 
 ### 3.6 Farkların Nedenleri
 
-1. **Piksel merkezi kuralı (half-pixel offset).** OpenCV kaynak konumu $s = (d + 0.5)\cdot oran - 0.5$ ile hesaplar; yani piksellerin **merkezlerini** hizalar. Naive $s = d\cdot oran$ eşlemesi ise piksel **köşelerini** hizalar ve görüntüyü sola-yukarı yaklaşık 0.5·(1 − 1/1.7) ≈ 0.21 giriş pikseli kaydırır. Bu kayma kenarlarda büyük farka dönüşür: naive kural ile maksimum fark {{q3.resize.naive_vs_cv2.max_abs_diff}}, ortalama {{q3.resize.naive_vs_cv2.mean_abs_diff|.2f}}; fark haritasında (sağda) farkın nesne kenarlarında yoğunlaştığı görülür. Half-pixel kural kullanıldığında maksimum fark {{q3.resize.half_pixel_vs_cv2.max_abs_diff}} gri seviyeye iner (PSNR {{q3.resize.half_pixel_vs_cv2.psnr_db|.2f}} dB).
-2. **Yuvarlama / sabit noktalı aritmetik.** Kalan ±1'lik fark (piksellerin %{{q3.resize.half_pixel_vs_cv2.pct_pixels_differ|.1f}}'inde), OpenCV'nin `uint8` resize'da ağırlıkları 11 bitlik tamsayılara (INTER_RESIZE_COEF_BITS = 11, ölçek 2048) yuvarlayıp tamsayı aritmetiği kullanmasından kaynaklanır. Manuel sürüm ağırlıkları `float64` ile tam hesaplar ve sonucu yalnızca en sonda yuvarlar. Float manuel sonuç ile OpenCV `uint8` sonucu arasındaki maksimum fark {{q3.resize.half_pixel_float_vs_cv2.max_abs_diff|.3f}}'tür; yani fark tamamen son yuvarlama adımındadır. Fark haritası (soldaki) yapısız, gürültü benzeri bir 0/1 dağılımı gösterir; sistematik bir kayma yoktur.
-3. **Border (padding) modu.** Laplacian'da manuel sürüm ve OpenCV aynı `reflect101` modunu kullandığında fark **tam olarak {{q3.laplacian.loops_vs_filter2d_float.max_abs_diff}}**'dır. Farklı modlar yalnızca görüntünün en dış 1 piksellik çerçevesini etkiler:
+1. **Piksel merkezi kuralı (half-pixel offset).** OpenCV kaynak konumu $s = (d + 0.5)\cdot oran - 0.5$ ile hesaplar; yani piksellerin **merkezlerini** hizalar. Naive $s = d\cdot oran$ eşlemesi ise piksel **köşelerini** hizalar ve görüntüyü sola-yukarı yaklaşık 0.5·(1 − 1/1.7) ≈ 0.21 giriş pikseli kaydırır. Naive kural ile fark: maksimum {{q3.resize.naive_vs_cv2.max_abs_diff}}, ortalama {{q3.resize.naive_vs_cv2.mean_abs_diff|.2f}}, işaretli ortalama {{q3.resize.naive_mean_signed_diff|+.3f}}; fark haritasında (sağda) farkın nesne kenarlarında yoğunlaştığı görülür, çünkü yarım piksellik kayma yalnızca yoğunluğun değiştiği yerlerde değer farkı üretir. Half-pixel kural ile fark: maksimum {{q3.resize.half_pixel_vs_cv2.max_abs_diff}}, PSNR {{q3.resize.half_pixel_vs_cv2.psnr_db|.2f}} dB.
+2. **Yuvarlama / sabit noktalı aritmetik.** Half-pixel kuralda kalan fark (farklı piksel oranı: %{{q3.resize.half_pixel_vs_cv2.pct_pixels_differ|.1f}}), OpenCV'nin `uint8` resize'da ağırlıkları 11 bitlik tamsayılara (INTER_RESIZE_COEF_BITS = 11, ölçek 2048) yuvarlayıp tamsayı aritmetiği kullanmasından kaynaklanır. Manuel sürüm ağırlıkları `float64` ile tam hesaplar ve sonucu yalnızca en sonda yuvarlar. {{auto:q3_rounding}}
+3. **Border (padding) modu.** {{auto:lap_exact}} Farklı modlar yalnızca görüntünün en dış 1 piksellik çerçevesini etkiler:
 
 {{table:q3_border}}
 
-4. **uint8 taşması (overflow).** Laplacian negatif değerler ve 255'ten büyük değerler üretir. `uint8` çıktılı `cv2.filter2D` negatifleri 0'a **doyurur** (saturation), NumPy `uint8` aritmetiği ise mod 256 **sarar** (wrap-around). Her iki durumda da float sonuçtan büyük sapmalar oluşur (tablodaki son iki satır) ve doyurulmuş Laplacian ile yapılan keskinleştirme yanlış sonuç verir (fark: maksimum {{q3.overflow.sharpen_with_saturated_vs_float.max_abs_diff}}). Bu yüzden tüm hesaplar `float64` ile yapılmıştır.
+4. **uint8 taşması (overflow).** Laplacian negatif değerler ve 255'ten büyük değerler üretir. `uint8` çıktılı `cv2.filter2D` negatifleri 0'a **doyurur** (saturation), NumPy `uint8` aritmetiği ise mod 256 **sarar** (wrap-around). Her iki durumda da float sonuçtan büyük sapmalar oluşur (tablodaki son iki satır) ve doyurulmuş Laplacian ile yapılan keskinleştirme yanlış sonuç verir (doğru keskinleştirmeye göre maksimum fark: {{q3.overflow.sharpen_with_saturated_vs_float.max_abs_diff}}). Bu yüzden tüm hesaplar `float64` ile yapılmıştır.
 
 {{fig:q3/fig_overflow.png|uint8 taşmasının etkisi: float (doğru), doygunluk, wrap-around ve yanlış keskinleştirme}}
 
 {{fig:q3/fig_border_zero_vs_reflect.png|Zero padding ile reflect101 arasındaki fark yalnızca çerçevede}}
 
-Tam pipeline'da (manuel resize → manuel Laplacian → keskinleştirme ile cv2.resize → cv2.Laplacian → keskinleştirme) kalan fark (maksimum {{q3.sharpen.manual_pipeline_vs_cv2_pipeline.max_abs_diff}}), resize adımındaki ±1 farkların Laplacian'ın merkez katsayısı (−4) ve komşu katsayılarıyla büyütülmesinden kaynaklanır; aynı girişe uygulandığında keskinleştirme farkı {{q3.sharpen.manual_vs_builtin_same_input.max_abs_diff}}'dır.
+Tam pipeline'da (manuel resize → manuel Laplacian → keskinleştirme ile cv2.resize → cv2.Laplacian → keskinleştirme) kalan fark (maksimum: {{q3.sharpen.manual_pipeline_vs_cv2_pipeline.max_abs_diff}}), resize adımındaki ±1 farkların keskinleştirme çekirdeğiyle (merkez katsayısı 1 + 4 = 5) büyütülmesinden kaynaklanır; aynı girişe uygulandığında keskinleştirme farkı (maksimum): {{q3.sharpen.manual_vs_builtin_same_input.max_abs_diff}}.
 
 ---
 
@@ -322,6 +333,6 @@ Tam pipeline'da (manuel resize → manuel Laplacian → keskinleştirme ile cv2.
 
 | Soru | Ana bulgu | Kanıt |
 | --- | --- | --- |
-| Q1 | Manuel Contrast Stretching ve HE her iki görüntüde çıktıyı [0, 255] aralığına yaydı; HE, `cv2.equalizeHist` ile en fazla {{q1.pout.enhance.he_vs_cv2_equalizeHist.max_abs_diff}} (pout) / {{q1.tire.enhance.he_vs_cv2_equalizeHist.max_abs_diff}} (tire) farklı. Kenar keskinliğini en iyi koruyan filtre: {{q1.pout.verdict.he.best_sharpness_only}} (pout), {{q1.tire.verdict.he.best_sharpness_only}} (tire). | Bölüm 1.3–1.9 |
+| Q1 | Manuel Contrast Stretching ve HE her iki görüntüde çıktıyı [0, 255] aralığına yaydı; `cv2.equalizeHist` ile maksimum fark: pout {{q1.pout.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}, tire {{q1.tire.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}. Kenar keskinliğini en iyi koruyan filtre: {{q1.pout.verdict.he.best_sharpness_only}} (pout), {{q1.tire.verdict.he.best_sharpness_only}} (tire). | Bölüm 1.3–1.9 |
 | Q2 | NN rotation'da Sobel fazla (false) kenar enerjisi %{{q2.cases.rot30_nn.edges.sobel_excess_energy_pct|.1f}}, Bilinear'da %{{q2.cases.rot30_bilinear.edges.sobel_excess_energy_pct|.1f}}; NN basamakları gradyan yönünü eksenlere kaydırıyor. | Bölüm 2.4–2.5 |
-| Q3 | Half-pixel kuralıyla manuel Bilinear, cv2.resize ile en fazla {{q3.resize.half_pixel_vs_cv2.max_abs_diff}} farklı (PSNR {{q3.resize.half_pixel_vs_cv2.psnr_db|.2f}} dB); nested-loop Laplacian, cv2.filter2D ile birebir aynı (fark {{q3.laplacian.loops_vs_filter2d_float.max_abs_diff}}). | Bölüm 3.5–3.6 |
+| Q3 | Half-pixel kuralıyla manuel Bilinear ile cv2.resize arasındaki maksimum fark: {{q3.resize.half_pixel_vs_cv2.max_abs_diff}} (PSNR {{q3.resize.half_pixel_vs_cv2.psnr_db|.2f}} dB); nested-loop Laplacian ile cv2.filter2D arasındaki maksimum fark: {{q3.laplacian.loops_vs_filter2d_float.max_abs_diff}}. | Bölüm 3.5–3.6 |

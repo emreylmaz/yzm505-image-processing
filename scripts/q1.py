@@ -106,7 +106,11 @@ def verdict(rows: dict, sp: dict | None = None) -> dict:
     }
     if sp:
         cand = {k: v["psnr_vs_clean_db"] for k, v in sp.items() if k in LABELS}
-        out["saltpepper_best_psnr"] = LABELS[max(cand, key=cand.get)]
+        ranked = sorted(cand, key=cand.get, reverse=True)
+        out["saltpepper_best_psnr"] = LABELS[ranked[0]]
+        out["saltpepper_best_key"] = ranked[0]
+        out["saltpepper_second"] = LABELS[ranked[1]]
+        out["saltpepper_margin_db"] = cand[ranked[0]] - cand[ranked[1]]
     return out
 
 
@@ -167,6 +171,19 @@ def process(name: str, fname: str) -> dict:
     )
 
     # ------------------------------------------------------------ 2) Filtreler (her iki iyileştirmeye)
+    # Manual filtreler vs OpenCV (aynı border) — HE görüntüsünde
+    m["builtin_check"] = {
+        "mean3_vs_cv2_blur": compare(to_uint8(F.mean_filter(he, 3)), F.mean_builtin(he, 3)),
+        "median3_vs_cv2_medianBlur": compare(
+            to_uint8(F.median_filter(he, 3)), F.median_builtin(he, 3)
+        ),
+        "gauss_s1_vs_cv2_GaussianBlur": compare(
+            to_uint8(F.gaussian_filter(he, 1.0)), F.gaussian_builtin(he, 1.0)
+        ),
+        "gauss_s2_vs_cv2_GaussianBlur": compare(
+            to_uint8(F.gaussian_filter(he, 2.0)), F.gaussian_builtin(he, 2.0)
+        ),
+    }
     m["filters"] = {}
     banks = {}
     for ename, ref in (("stretch", st), ("he", he)):

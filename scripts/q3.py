@@ -97,6 +97,8 @@ def main() -> None:
         "loops_seconds": t_loops,
         "half_pixel_vs_cv2": compare(man_u8, up_cv),
         "naive_vs_cv2": compare(naive_u8, up_cv),
+        "half_pixel_mean_signed_diff": float(np.mean(man_u8.astype(float) - up_cv)),
+        "naive_mean_signed_diff": float(np.mean(naive_u8.astype(float) - up_cv)),
         "half_pixel_float_vs_cv2": {
             "max_abs_diff": float(np.max(np.abs(up_loops - up_cv))),
             "mean_abs_diff": float(np.mean(np.abs(up_loops - up_cv))),

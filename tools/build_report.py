@@ -50,6 +50,8 @@ def fmt(v, spec: str | None) -> str:
         return f"{v:.4g}" if abs(v) < 1e4 else f"{v:.0f}"
     if isinstance(v, bool):
         return "evet" if v else "hayır"
+    if isinstance(v, list) and v and all(isinstance(r, list) for r in v):
+        return "[" + ", ".join("[" + ", ".join(f"{x:.4f}" for x in r) + "]" for r in v) + "]"
     if isinstance(v, list):
         return "×".join(str(x) for x in v) if all(isinstance(x, int) for x in v) else str(v)
     return str(v)
@@ -286,6 +288,183 @@ def t_q3_border(m):
     )
 
 
+# ----------------------------------------------------------------------------- veriye bağlı cümleler
+# Sonuç cümleleri elle yazılmaz: sayılara göre burada üretilir (rapor ile veri çelişemez).
+def a_he_cv2(m, name):
+    d = m["q1"][name]["enhance"]["he_vs_cv2_equalizeHist"]
+    if d["max_abs_diff"] == 0:
+        return (
+            "Manuel HE ile `cv2.equalizeHist` çıktıları **birebir aynıdır** (maksimum fark 0); "
+            "iki uygulama aynı formülü kullanır."
+        )
+    return (
+        f"Manuel HE ile `cv2.equalizeHist` arasındaki maksimum fark {d['max_abs_diff']:g} gri seviye "
+        f"(farklı piksel oranı %{d['pct_pixels_differ']:.2f}); fark OpenCV'nin float32 ölçek katsayısı "
+        "ve yuvarlama kuralından kaynaklanır."
+    )
+
+
+def a_builtin_filters(m):
+    parts = []
+    for name in ("pout", "tire"):
+        b = m["q1"][name]["builtin_check"]
+        parts.append(f"{name}: en fazla {max(v['max_abs_diff'] for v in b.values()):g}")
+    return (
+        "HE görüntüleri üzerinde manuel filtrelerin OpenCV karşılıklarından (aynı border) maksimum "
+        "farkı — " + ", ".join(parts) + " gri seviye (ayrıntı: `metrics.json → builtin_check`)."
+    )
+
+
+def _mvm(m, n, k):
+    return m["q1"][n]["verdict"]["he"]["mean_vs_median"][k]
+
+
+def a_q1_conclusion(m):
+    names, ks = ("pout", "tire"), ("k3", "k5")
+    med_sharper = all(_mvm(m, n, k)["median_sharper"] for n in names for k in ks)
+    mean_more_noise_red = all(
+        _mvm(m, n, k)["median_noise_reduction_pct"] < _mvm(m, n, k)["mean_noise_reduction_pct"]
+        for n in names
+        for k in ks
+    )
+    v = {n: m["q1"][n]["verdict"]["he"] for n in names}
+    sharp = {n: v[n]["best_sharpness_only"] for n in names}
+    lines = []
+    if med_sharper:
+        lines.append(
+            "Her iki görüntüde ve her iki pencere boyutunda (3×3, 5×5) **Median, Mean'e göre nesne "
+            "kenarlarını daha iyi korumuştur** (Bölüm 1.7 sayıları, zoom ve profil figürleri)."
+        )
+    else:
+        lines.append(
+            "Median'ın Mean'e göre kenar korunumu üstünlüğü tüm görüntü/pencere kombinasyonlarında "
+            "geçerli değildir; ayrıntı Bölüm 1.7'deki sayılardadır."
+        )
+    if mean_more_noise_red:
+        lines.append(
+            "Buna karşılık düz bölgelerdeki ince taneli (Gaussian benzeri) gürültüyü Mean daha güçlü "
+            "bastırmıştır; Mean'in bu avantajı kenar bulanıklığı pahasına gelmektedir."
+        )
+    if sharp["pout"] == sharp["tire"]:
+        lines.append(
+            f"Yalnızca kenar keskinliği ölçütünde en iyi filtre her iki görüntüde **{sharp['pout']}** olmuştur."
+        )
+    else:
+        lines.append(
+            f"Yalnızca kenar keskinliği ölçütünde en iyi filtre pout'ta **{sharp['pout']}**, "
+            f"tire'da **{sharp['tire']}** olmuştur."
+        )
+    lines.append(
+        f"Gürültü azaltma–keskinlik denge skorunda pout'ta **{v['pout']['best_label']}**, tire'da "
+        f"**{v['tire']['best_label']}** öndedir; impulsif gürültüde en yüksek PSNR pout'ta "
+        f"**{v['pout']['saltpepper_best_psnr']}**, tire'da **{v['tire']['saltpepper_best_psnr']}** ile "
+        "elde edilmiştir."
+    )
+    median_wins = med_sharper and all(
+        "Median" in x for x in (*sharp.values(), *(v[n]["saltpepper_best_psnr"] for n in names))
+    )
+    if median_wins:
+        lines.append(
+            "**Cevap:** Sorunun ölçütü “gürültüyü temizlerken keskinliği korumak” olduğundan, hem "
+            "kenar korunumunda hem impulsif gürültü temizliğinde önde olan **Median filtre** en uygun "
+            "filtredir. Gaussian/Mean yalnızca düz bölge gürültüsü öncelikli olduğunda ve kenar kaybı "
+            "kabul edilebildiğinde tercih edilebilir."
+        )
+    else:
+        lines.append(
+            "**Cevap:** Sonuç ölçüte bağlıdır; yukarıdaki sayılar hangi filtrenin hangi ölçütte önde "
+            "olduğunu görüntü bazında göstermektedir."
+        )
+    return "\n\n".join(lines)
+
+
+def a_sp_best(m):
+    out = []
+    for n in ("pout", "tire"):
+        v = m["q1"][n]["verdict"]["he"]
+        out.append(
+            f"{n}: **{v['saltpepper_best_psnr']}** (ikinci {v['saltpepper_second']}, "
+            f"fark {v['saltpepper_margin_db']:.2f} dB)"
+        )
+    return "İmpulsif gürültüde en yüksek PSNR — " + "; ".join(out) + "."
+
+
+def a_q3_rounding(m):
+    r = m["q3"]["resize"]
+    f = r["half_pixel_float_vs_cv2"]["max_abs_diff"]
+    s = r["half_pixel_mean_signed_diff"]
+    if f < 1:
+        msg = (
+            f"Float manuel sonuç ile OpenCV `uint8` sonucu arasındaki maksimum fark {f:.3f}; bu değer "
+            "1'den küçük olduğundan uint8 farkı son yuvarlama adımından kaynaklanır."
+        )
+    else:
+        msg = (
+            f"Float manuel sonuç ile OpenCV `uint8` sonucu arasındaki maksimum fark {f:.3f}; 1'i aştığı "
+            "için fark yalnızca son yuvarlamayla açıklanamaz."
+        )
+    return (
+        msg
+        + f" İşaretli ortalama fark {s:+.4f} gri seviyedir (≈0 → sistematik parlaklık kayması yok)."
+    )
+
+
+def a_lap_exact(m):
+    d = m["q3"]["laplacian"]["loops_vs_filter2d_float"]["max_abs_diff"]
+    if d == 0:
+        return (
+            "Laplacian'da manuel sürüm ve OpenCV aynı `reflect101` modunu kullandığında çıktılar "
+            "**bit düzeyinde aynıdır** (maksimum fark 0)."
+        )
+    return f"Laplacian'da aynı `reflect101` modu ile maksimum fark: {d:g} (kayan nokta toplama sırası)."
+
+
+def a_q2_canny(m):
+    c = m["q2"]["cases"]
+    nn, bl = c["rot30_nn"]["edges"], c["rot30_bilinear"]["edges"]
+    gap = nn["canny_exact_mismatch_pct"] - bl["canny_exact_mismatch_pct"]
+    base = (
+        f"Canny tarafında piksel konum uyumsuzluğu NN %{nn['canny_exact_mismatch_pct']:.1f}, Bilinear "
+        f"%{bl['canny_exact_mismatch_pct']:.1f}; kenar piksel sayısı NN {nn['canny_edge_pixels']}, "
+        f"Bilinear {bl['canny_edge_pixels']}, referans {nn['reference_canny_edge_pixels']} (kaçırılan "
+        f"referans kenar oranı NN %{nn['canny_missed_pct_1px']:.1f}, Bilinear %{bl['canny_missed_pct_1px']:.1f})."
+    )
+    if abs(gap) < 2:
+        base += (
+            " Canny'nin inceltme ve histerezis adımları basamakları kısmen düzelttiği için Canny "
+            "konum metriklerindeki fark küçüktür; aliasing'in ana kanıtı Sobel fazla enerjisi ve "
+            "gradyan yönü sapmasıdır."
+        )
+    else:
+        base += " Canny zinciri NN'de belirgin biçimde merdiven biçimini izlemektedir."
+    return base
+
+
+def a_q2_nn_cv2(m):
+    d = m["q2"]["cases"]["rot30_nn"]["manual_vs_cv2_warpAffine"]
+    if d["max_abs_diff"] == 0:
+        return "NN dönüşümünde manuel sonuç ile `cv2.warpAffine` birebir aynıdır."
+    return (
+        f"NN satırındaki maksimum fark ({d['max_abs_diff']:g}) piksellerin yalnızca "
+        f"%{d['pct_pixels_differ']:.2f} kadarında görülür: kaynak konumu iki piksel merkezinin "
+        "ortasına (.5) çok yakın düşen noktalarda manuel `floor(x+0.5)` ile OpenCV'nin sabit noktalı "
+        "yuvarlaması farklı komşuyu seçer; checkerboard'da komşular 0 ve 255 olabildiği için tek bir "
+        "farklı seçim büyük fark üretir."
+    )
+
+
+AUTO = {
+    "he_cv2": a_he_cv2,
+    "builtin_filters": a_builtin_filters,
+    "q1_conclusion": a_q1_conclusion,
+    "sp_best": a_sp_best,
+    "q3_rounding": a_q3_rounding,
+    "lap_exact": a_lap_exact,
+    "q2_canny": a_q2_canny,
+    "q2_nn_cv2": a_q2_nn_cv2,
+}
+
+
 TABLES = {
     "q1_enhance": t_q1_enhance,
     "q1_filters": t_q1_filters,
@@ -308,6 +487,9 @@ def render(text: str, m: dict) -> tuple[str, list[str]]:
                 return code_block(key[5:])
             if key.startswith("fig:"):
                 return figure(key[4:])
+            if key.startswith("auto:"):
+                name, *args = key[5:].split(":")
+                return AUTO[name](m, *args)
             if key.startswith("table:"):
                 name, *args = key[6:].split(":")
                 return TABLES[name](m, *args)
