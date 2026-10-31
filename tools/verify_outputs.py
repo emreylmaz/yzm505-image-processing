@@ -8,9 +8,7 @@ from __future__ import annotations
 import json
 import sys
 
-import numpy as np
-
-from ip.io import DATA_DIR, OUTPUT_DIR, file_sha256, load_gray
+from ip.io import DATA_DIR, OUTPUT_DIR, file_sha256
 
 EXPECTED = {
     "q1": [f"{n}_{s}.png" for n in ("pout", "tire") for s in ("original", "stretch", "he")]
@@ -74,7 +72,11 @@ def main() -> int:
     metrics = {}
     for q, files in EXPECTED.items():
         missing = [f for f in files if not (OUTPUT_DIR / q / f).is_file()]
-        check(f"{q} figürleri", not missing, f"eksik: {missing[:3]}" if missing else f"{len(files)} dosya")
+        check(
+            f"{q} figürleri",
+            not missing,
+            f"eksik: {missing[:3]}" if missing else f"{len(files)} dosya",
+        )
         mpath = OUTPUT_DIR / q / "metrics.json"
         try:
             metrics[q] = json.loads(mpath.read_text(encoding="utf-8"))
@@ -90,21 +92,30 @@ def main() -> int:
                 import cv2
 
                 img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
-                check(f"q1 {n}_{s} aralık", img.min() == 0 and img.max() == 255,
-                      f"min={img.min()} max={img.max()}")
+                check(
+                    f"q1 {n}_{s} aralık",
+                    img.min() == 0 and img.max() == 255,
+                    f"min={img.min()} max={img.max()}",
+                )
 
     if "q3" in metrics:
         r = metrics["q3"]["resize"]
         check("q3 loops == vec", r["loops_equals_vec_exact"])
-        check("q3 half-pixel vs cv2 ≤ 1", r["half_pixel_vs_cv2"]["max_abs_diff"] <= 1,
-              f"max={r['half_pixel_vs_cv2']['max_abs_diff']}")
+        check(
+            "q3 half-pixel vs cv2 ≤ 1",
+            r["half_pixel_vs_cv2"]["max_abs_diff"] <= 1,
+            f"max={r['half_pixel_vs_cv2']['max_abs_diff']}",
+        )
         lap = metrics["q3"]["laplacian"]
         check("q3 Laplacian vs filter2D == 0", lap["loops_vs_filter2d_float"]["max_abs_diff"] == 0)
     if "q2" in metrics:
         c = metrics["q2"]["cases"]
         nn, bl = c["rot30_nn"]["edges"], c["rot30_bilinear"]["edges"]
-        check("q2 NN Sobel hatası > Bilinear", nn["sobel_mae_vs_reference"] > bl["sobel_mae_vs_reference"],
-              f"{nn['sobel_mae_vs_reference']:.1f} vs {bl['sobel_mae_vs_reference']:.1f}")
+        check(
+            "q2 NN Sobel hatası > Bilinear",
+            nn["sobel_mae_vs_reference"] > bl["sobel_mae_vs_reference"],
+            f"{nn['sobel_mae_vs_reference']:.1f} vs {bl['sobel_mae_vs_reference']:.1f}",
+        )
     if "q1" in metrics:
         for n in ("pout", "tire"):
             e = metrics["q1"][n]["enhance"]["he_vs_cv2_equalizeHist"]["max_abs_diff"]

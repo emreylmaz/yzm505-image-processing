@@ -33,7 +33,9 @@ def edge_analysis(img_u8, ref_u8, inner, expected_deg):
     ref_can = E.canny(ref_u8) & inner
     near_ref = E.dilate(ref_can, 1)
     near_me = E.dilate(can, 1)
-    excess = np.clip(mag - ref_mag, 0, None)  # referansta olmayan FAZLA Sobel yanıtı = false edge enerjisi
+    excess = np.clip(
+        mag - ref_mag, 0, None
+    )  # referansta olmayan FAZLA Sobel yanıtı = false edge enerjisi
     return {
         "canny_edge_pixels": int(can.sum()),
         "reference_canny_edge_pixels": int(ref_can.sum()),

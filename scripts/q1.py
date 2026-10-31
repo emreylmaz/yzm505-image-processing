@@ -76,6 +76,40 @@ def score_filters(ref: np.ndarray, bank: dict[str, np.ndarray]) -> dict:
     }
 
 
+def verdict(rows: dict, sp: dict | None = None) -> dict:
+    """Denge skoru = 2·S·N/(S+N) (S: keskinlik korunumu %, N: gürültü azalması %; F1 benzeri)."""
+    score = {
+        k: 2
+        * v["sharpness_retained_pct"]
+        * v["noise_reduction_pct"]
+        / (v["sharpness_retained_pct"] + v["noise_reduction_pct"])
+        for k, v in rows.items()
+        if k != "unfiltered"
+    }
+    best = max(score, key=score.get)
+    out = {
+        "balance_score": score,
+        "best": best,
+        "best_label": LABELS[best],
+        "best_sharpness_only": LABELS[max(score, key=lambda k: rows[k]["sharpness_retained_pct"])],
+        "mean_vs_median": {
+            f"k{k}": {
+                "mean_sharpness_retained_pct": rows[f"mean{k}"]["sharpness_retained_pct"],
+                "median_sharpness_retained_pct": rows[f"median{k}"]["sharpness_retained_pct"],
+                "mean_noise_reduction_pct": rows[f"mean{k}"]["noise_reduction_pct"],
+                "median_noise_reduction_pct": rows[f"median{k}"]["noise_reduction_pct"],
+                "median_sharper": rows[f"median{k}"]["sharpness_retained_pct"]
+                > rows[f"mean{k}"]["sharpness_retained_pct"],
+            }
+            for k in (3, 5)
+        },
+    }
+    if sp:
+        cand = {k: v["psnr_vs_clean_db"] for k, v in sp.items() if k in LABELS}
+        out["saltpepper_best_psnr"] = LABELS[max(cand, key=cand.get)]
+    return out
+
+
 def salt_pepper(img_u8: np.ndarray, p: float, seed: int) -> np.ndarray:
     rng = np.random.default_rng(seed)
     r = rng.random(img_u8.shape)
@@ -225,6 +259,10 @@ def process(name: str, fname: str) -> dict:
         sp[k] = {"psnr_vs_clean_db": psnr(v, he), "edge_sharpness": E.edge_sharpness(v, em)}
     sp["clean_edge_sharpness"] = E.edge_sharpness(he, em)
     m["salt_pepper"] = {"p": SP_PROB, "seed": SEED, "results": sp}
+    m["verdict"] = {
+        "he": verdict(m["filters"]["he"]["filters"], sp),
+        "stretch": verdict(m["filters"]["stretch"]["filters"]),
+    }
     viz.grid(
         [noisy, nb["mean3"], nb["median3"], nb["gauss_s1"]]
         + [viz.zoom(z, roi, 6) for z in (noisy, nb["mean3"], nb["median3"], nb["gauss_s1"])],
