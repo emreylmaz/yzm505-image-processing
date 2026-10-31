@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import math
 import time
 
@@ -72,6 +74,7 @@ def worked_example(img: np.ndarray, y: int, x: int) -> dict:
 
 
 def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # Windows cp1254 konsolu
     img = load_gray(require_data("cameraman.tif"))
     save_png(img, OUT / "original.png")
     m: dict = {"input": {"file": "data/cameraman.tif", "shape": list(img.shape)}, "scale": SCALE}

@@ -29,7 +29,7 @@ def require_data(name: str) -> Path:
 
 
 def to_uint8(img: np.ndarray) -> np.ndarray:
-    """float -> [0,255] clip -> en yakına yuvarla -> uint8. Pipeline'ın tek çıkış noktası."""
+    """float -> en yakına yuvarla (np.rint: .5 → çift sayı, cv2 saturate_cast ile aynı) -> [0,255] clip -> uint8."""
     return np.clip(np.rint(np.asarray(img, dtype=np.float64)), 0, 255).astype(np.uint8)
 
 
