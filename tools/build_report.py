@@ -36,10 +36,7 @@ def load_metrics() -> dict:
 def lookup(m: dict, path: str):
     cur = m
     for part in path.split("."):
-        if isinstance(cur, list):
-            cur = cur[int(part)]
-        else:
-            cur = cur[part]
+        cur = cur[int(part)] if isinstance(cur, list) else cur[part]
     return cur
 
 

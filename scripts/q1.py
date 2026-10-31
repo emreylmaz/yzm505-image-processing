@@ -51,24 +51,18 @@ def score_filters(ref: np.ndarray, bank: dict[str, np.ndarray]) -> dict:
     """Aynı (referanstan çıkarılmış) kenar ve düz-bölge maskeleriyle metrikler."""
     emask, fmask = E.edge_mask(ref), E.flat_mask(ref)
     s0, n0 = E.edge_sharpness(ref, emask), E.flat_noise(ref, fmask)
-    rows = {
-        "unfiltered": {
-            "edge_sharpness": s0,
-            "laplacian_var": E.laplacian_variance(ref),
-            "flat_noise": n0,
-            "sharpness_retained_pct": 100.0,
-            "noise_reduction_pct": 0.0,
-        }
-    }
-    for k, img in bank.items():
+
+    def row(img: np.ndarray) -> dict:
         s, n = E.edge_sharpness(img, emask), E.flat_noise(img, fmask)
-        rows[k] = {
+        return {
             "edge_sharpness": s,
             "laplacian_var": E.laplacian_variance(img),
             "flat_noise": n,
             "sharpness_retained_pct": s / s0 * 100.0,
             "noise_reduction_pct": (1.0 - n / n0) * 100.0,
         }
+
+    rows = {k: row(img) for k, img in {"unfiltered": ref, **bank}.items()}
     return {
         "edge_mask_pixels": int(emask.sum()),
         "flat_mask_pixels": int(fmask.sum()),
@@ -172,18 +166,13 @@ def process(name: str, fname: str) -> dict:
 
     # ------------------------------------------------------------ 2) Filtreler (her iki iyileştirmeye)
     # Manual filtreler vs OpenCV (aynı border) — HE görüntüsünde
-    m["builtin_check"] = {
-        "mean3_vs_cv2_blur": compare(to_uint8(F.mean_filter(he, 3)), F.mean_builtin(he, 3)),
-        "median3_vs_cv2_medianBlur": compare(
-            to_uint8(F.median_filter(he, 3)), F.median_builtin(he, 3)
-        ),
-        "gauss_s1_vs_cv2_GaussianBlur": compare(
-            to_uint8(F.gaussian_filter(he, 1.0)), F.gaussian_builtin(he, 1.0)
-        ),
-        "gauss_s2_vs_cv2_GaussianBlur": compare(
-            to_uint8(F.gaussian_filter(he, 2.0)), F.gaussian_builtin(he, 2.0)
-        ),
+    pairs = {
+        "mean3_vs_cv2_blur": (F.mean_filter(he, 3), F.mean_builtin(he, 3)),
+        "median3_vs_cv2_medianBlur": (F.median_filter(he, 3), F.median_builtin(he, 3)),
+        "gauss_s1_vs_cv2_GaussianBlur": (F.gaussian_filter(he, 1.0), F.gaussian_builtin(he, 1.0)),
+        "gauss_s2_vs_cv2_GaussianBlur": (F.gaussian_filter(he, 2.0), F.gaussian_builtin(he, 2.0)),
     }
+    m["builtin_check"] = {k: compare(to_uint8(man), cv) for k, (man, cv) in pairs.items()}
     m["filters"] = {}
     banks = {}
     for ename, ref in (("stretch", st), ("he", he)):
@@ -208,15 +197,18 @@ def process(name: str, fname: str) -> dict:
         "HE görüntüsünün nesne kenar maskesinde (Canny(Gaussian σ=2)) kenar yoğunluğu en yüksek 40×40 pencere (otomatik, deterministik)"
     )
     viz.grid(
-        [
-            viz.draw_rois(he, [roi]),
-            viz.zoom(he, roi, 6),
-            viz.zoom(bank["mean3"], roi, 6),
-            viz.zoom(bank["median3"], roi, 6),
-            viz.zoom(E.sobel_display(E.sobel_mag(he)), roi, 6),
-            viz.zoom(bank["mean5"], roi, 6),
-            viz.zoom(bank["median5"], roi, 6),
-            viz.zoom(bank["gauss_s2"], roi, 6),
+        [viz.draw_rois(he, [roi])]
+        + [
+            viz.zoom(z, roi, 6)
+            for z in (
+                he,
+                bank["mean3"],
+                bank["median3"],
+                E.sobel_display(E.sobel_mag(he)),
+                bank["mean5"],
+                bank["median5"],
+                bank["gauss_s2"],
+            )
         ],
         [
             f"HE + ROI {roi}",
@@ -239,10 +231,13 @@ def process(name: str, fname: str) -> dict:
     m["profile_row"] = int(row)
     viz.profiles(
         {
-            "HE (filtresiz)": he[row, x : x + w].astype(float),
-            "Mean 5×5": bank["mean5"][row, x : x + w].astype(float),
-            "Median 5×5": bank["median5"][row, x : x + w].astype(float),
-            "Gaussian σ=2": bank["gauss_s2"][row, x : x + w].astype(float),
+            lab: im[row, x : x + w].astype(float)
+            for lab, im in (
+                ("HE (filtresiz)", he),
+                ("Mean 5×5", bank["mean5"]),
+                ("Median 5×5", bank["median5"]),
+                ("Gaussian σ=2", bank["gauss_s2"]),
+            )
         },
         OUT / f"{name}_fig_profile.png",
         f"{name}: satır {row}, x∈[{x},{x + w}) yoğunluk profili",
@@ -265,16 +260,11 @@ def process(name: str, fname: str) -> dict:
     # ------------------------------------------------------------ 4) Ek deney: salt & pepper
     noisy = salt_pepper(he, SP_PROB, SEED)
     nb = filter_bank(noisy)
-    em = E.edge_mask(he)
     sp = {
-        "noisy": {
-            "psnr_vs_clean_db": psnr(noisy, he),
-            "edge_sharpness": E.edge_sharpness(noisy, em),
-        }
+        k: {"psnr_vs_clean_db": psnr(v, he), "edge_sharpness": E.edge_sharpness(v, emask)}
+        for k, v in {"noisy": noisy, **nb}.items()
     }
-    for k, v in nb.items():
-        sp[k] = {"psnr_vs_clean_db": psnr(v, he), "edge_sharpness": E.edge_sharpness(v, em)}
-    sp["clean_edge_sharpness"] = E.edge_sharpness(he, em)
+    sp["clean_edge_sharpness"] = E.edge_sharpness(he, emask)
     m["salt_pepper"] = {"p": SP_PROB, "seed": SEED, "results": sp}
     m["verdict"] = {
         "he": verdict(m["filters"]["he"]["filters"], sp),
@@ -316,10 +306,9 @@ def main() -> None:
     for name, fname in IMAGES.items():
         metrics[name] = process(name, fname)
         r = metrics[name]["filters"]["he"]["filters"]
+        st, he = metrics[name]["enhance"]["stretch"], metrics[name]["enhance"]["he"]
         print(
-            f"[q1] {name}: stretch [{metrics[name]['enhance']['stretch']['min']},"
-            f"{metrics[name]['enhance']['stretch']['max']}] he [{metrics[name]['enhance']['he']['min']},"
-            f"{metrics[name]['enhance']['he']['max']}]  "
+            f"[q1] {name}: stretch [{st['min']},{st['max']}] he [{he['min']},{he['max']}]  "
             + "  ".join(
                 f"{k}: keskinlik%{v['sharpness_retained_pct']:.0f}/gürültü↓%{v['noise_reduction_pct']:.0f}"
                 for k, v in r.items()

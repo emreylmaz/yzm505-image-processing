@@ -33,9 +33,8 @@ def edge_analysis(img_u8, ref_u8, inner, expected_deg):
     ref_can = E.canny(ref_u8) & inner
     near_ref = E.dilate(ref_can, 1)
     near_me = E.dilate(can, 1)
-    excess = np.clip(
-        mag - ref_mag, 0, None
-    )  # referansta olmayan FAZLA Sobel yanıtı = false edge enerjisi
+    # referansta olmayan FAZLA Sobel yanıtı = false edge enerjisi
+    excess = np.clip(mag - ref_mag, 0, None)
     return {
         "canny_edge_pixels": int(can.sum()),
         "reference_canny_edge_pixels": int(ref_can.sum()),
@@ -46,9 +45,7 @@ def edge_analysis(img_u8, ref_u8, inner, expected_deg):
         "sobel_excess_energy_pct": float(excess[inner].sum() / ref_mag[inner].sum() * 100)
         if ref_mag[inner].sum()
         else 0.0,
-        "orientation": E.orientation_stats(np.where(inner, img_u8, 0), expected_deg)
-        if expected_deg
-        else None,
+        "orientation": E.orientation_stats(np.where(inner, img_u8, 0), expected_deg),
     }
 
 
@@ -109,21 +106,19 @@ def main() -> None:
         inner = ~E.dilate(~valid, 3)  # tuval sınırı (görüntü/arka plan kenarı) analiz dışı
         imgs[name], refs[name], inners[name] = out, ref, inner
         save_png(out, OUT / f"{name}.png")
+        exp_deg = T.expected_gradient_angles(A)
         m["cases"][name] = {
             "shape": list(shape),
             "interp": interp,
             "matrix": A,
-            "expected_gradient_deg": T.expected_gradient_angles(A),
+            "expected_gradient_deg": exp_deg,
             "manual_vs_cv2_warpAffine": compare(out, T.warp_builtin(img, A, shape, interp)),
             "vs_reference": compare(out[inner], ref[inner]),
+            "edges": edge_analysis(out, ref, inner, exp_deg),
         }
 
     vmax = max(float(E.sobel_mag(v).max()) for v in imgs.values())
     m["sobel_display_vmax"] = vmax
-    for name, (A, *_r) in cases.items():
-        m["cases"][name]["edges"] = edge_analysis(
-            imgs[name], refs[name], inners[name], T.expected_gradient_angles(A)
-        )
     save_png(refs["rot30_nn"], OUT / "rot30_reference.png")
 
     # ------------------------------------------------------------ figürler
@@ -214,7 +209,7 @@ def main() -> None:
         ax.grid(alpha=0.3)
     fig.suptitle("Sobel gradyan yönü dağılımı (büyüklük ağırlıklı)", fontsize=10)
     fig.tight_layout()
-    viz._save(fig, OUT / "fig_orientation_hist.png")
+    viz.save_fig(fig, OUT / "fig_orientation_hist.png")
 
     write_metrics(m, OUT / "metrics.json")
     for k in order:

@@ -14,7 +14,7 @@ import numpy as np
 from ip import filters as F
 from ip import viz
 from ip.io import OUTPUT_DIR, load_gray, require_data, save_png, to_uint8
-from ip.metrics import compare, write_metrics
+from ip.metrics import compare, max_abs, mean_abs, write_metrics
 from ip.resize import (
     bilinear_resize_loops,
     bilinear_resize_vec,
@@ -89,6 +89,9 @@ def main() -> None:
     man_u8 = to_uint8(up_loops)
     naive_u8 = to_uint8(up_naive)
     h_out, w_out = up_loops.shape
+    s_half = man_u8.astype(float) - up_cv  # işaretli uint8 farkları
+    s_naive = naive_u8.astype(float) - up_cv
+    d_half, dn = np.abs(s_half), np.abs(s_naive)
     m["resize"] = {
         "out_shape": [h_out, w_out],
         "ratio_x": img.shape[1] / w_out,
@@ -97,16 +100,15 @@ def main() -> None:
         "loops_seconds": t_loops,
         "half_pixel_vs_cv2": compare(man_u8, up_cv),
         "naive_vs_cv2": compare(naive_u8, up_cv),
-        "half_pixel_mean_signed_diff": float(np.mean(man_u8.astype(float) - up_cv)),
-        "naive_mean_signed_diff": float(np.mean(naive_u8.astype(float) - up_cv)),
+        "half_pixel_mean_signed_diff": float(np.mean(s_half)),
+        "naive_mean_signed_diff": float(np.mean(s_naive)),
         "half_pixel_float_vs_cv2": {
-            "max_abs_diff": float(np.max(np.abs(up_loops - up_cv))),
-            "mean_abs_diff": float(np.mean(np.abs(up_loops - up_cv))),
+            "max_abs_diff": max_abs(up_loops, up_cv),
+            "mean_abs_diff": mean_abs(up_loops, up_cv),
         },
         "worked_example": worked_example(img, *EXAMPLE_PIXEL),
     }
     # naive farkın uzamsal dağılımı: kayma sağa/aşağı büyür → sağ-alt çeyrek vs sol-üst çeyrek
-    dn = np.abs(naive_u8.astype(float) - up_cv)
     q = h_out // 4
     m["resize"]["naive_diff_mean_topleft_quarter"] = float(dn[:q, :q].mean())
     m["resize"]["naive_diff_mean_bottomright_quarter"] = float(dn[-q:, -q:].mean())
@@ -126,7 +128,6 @@ def main() -> None:
         ncols=4,
         cell=3.4,
     )
-    d_half = np.abs(man_u8.astype(float) - up_cv)
     viz.heatmaps(
         [d_half, dn],
         [
@@ -170,7 +171,8 @@ def main() -> None:
     t_lap = time.perf_counter() - t0
     lap_f2d = F.laplacian_builtin(man_u8)
     lap_cvl = F.laplacian_cv(man_u8)
-    sharp_man = to_uint8(F.sharpen(man_u8, lap))
+    sharp_f = F.sharpen(man_u8, lap)  # float64, clip öncesi
+    sharp_man = to_uint8(sharp_f)
     sharp_same_input_builtin = to_uint8(F.sharpen(man_u8, lap_f2d))
     # Tam built-in pipeline: cv2.resize → cv2.Laplacian → sharpen
     sharp_cv_pipeline = to_uint8(F.sharpen(up_cv, F.laplacian_cv(up_cv)))
@@ -189,8 +191,8 @@ def main() -> None:
         "formula": "S = I - c*L, c=1",
         "manual_vs_builtin_same_input": compare(sharp_man, sharp_same_input_builtin),
         "manual_pipeline_vs_cv2_pipeline": compare(sharp_man, sharp_cv_pipeline),
-        "pct_clipped_low": float(np.mean(F.sharpen(man_u8, lap) < 0) * 100),
-        "pct_clipped_high": float(np.mean(F.sharpen(man_u8, lap) > 255) * 100),
+        "pct_clipped_low": float(np.mean(sharp_f < 0) * 100),
+        "pct_clipped_high": float(np.mean(sharp_f > 255) * 100),
     }
     save_png(sharp_man, OUT / "sharpened_manual.png")
     save_png(sharp_cv_pipeline, OUT / "sharpened_cv2_pipeline.png")
@@ -215,10 +217,11 @@ def main() -> None:
         cell=3.6,
     )
     d_pipe = np.abs(sharp_man.astype(float) - sharp_cv_pipeline)
+    d_lap = np.abs(lap - lap_f2d)
     viz.heatmaps(
-        [np.abs(lap - lap_f2d), d_pipe],
+        [d_lap, d_pipe],
         [
-            f"|L_loops − L_filter2D| (float)  max={np.abs(lap - lap_f2d).max():g}",
+            f"|L_loops − L_filter2D| (float)  max={d_lap.max():g}",
             f"|S_manual − S_cv2 pipeline|  max={d_pipe.max():.0f}",
         ],
         OUT / "fig_laplacian_diff_heatmap.png",
@@ -257,19 +260,19 @@ def main() -> None:
     )
 
     # ------------------------------------------------------------------ 4) Border modu etkisi
-    border = {}
-    for mode in ("replicate", "zero"):
-        d = np.abs(F.laplacian_vec(man_u8, border=mode) - lap)
-        inner = d[1:-1, 1:-1]
-        border[f"reflect101_vs_{mode}"] = {
+    d_border = {
+        mode: np.abs(F.laplacian_vec(man_u8, border=mode) - lap) for mode in ("replicate", "zero")
+    }
+    m["border_modes"] = {
+        f"reflect101_vs_{mode}": {
             "max_abs_diff": float(d.max()),
             "n_pixels_differ": int(np.count_nonzero(d)),
-            "n_inner_pixels_differ": int(np.count_nonzero(inner)),
+            "n_inner_pixels_differ": int(np.count_nonzero(d[1:-1, 1:-1])),
         }
-    m["border_modes"] = border
-    d_zero = np.abs(F.laplacian_vec(man_u8, border="zero") - lap)
+        for mode, d in d_border.items()
+    }
     viz.heatmap(
-        d_zero[:60, :60],
+        d_border["zero"][:60, :60],
         OUT / "fig_border_zero_vs_reflect.png",
         "|L(zero pad) − L(reflect101)| sol-üst 60×60",
     )

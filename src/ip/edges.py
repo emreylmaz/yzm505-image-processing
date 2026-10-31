@@ -11,7 +11,11 @@ from __future__ import annotations
 
 import numpy as np
 
+from ip.filters import gaussian_filter, laplacian_vec
+from ip.io import to_uint8
+
 CANNY_LO, CANNY_HI = 50, 150
+MASK_SIGMA = 2.0
 
 
 def sobel(img: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -32,7 +36,7 @@ def sobel_mag(img: np.ndarray) -> np.ndarray:
 def sobel_display(mag: np.ndarray, vmax: float | None = None) -> np.ndarray:
     """Sobel büyüklüğünü görüntüleme için [0,255]'e ölçekler (karşılaştırmalarda ortak vmax kullan)."""
     vmax = vmax or float(mag.max()) or 1.0
-    return np.clip(np.rint(mag / vmax * 255), 0, 255).astype(np.uint8)
+    return to_uint8(mag / vmax * 255)
 
 
 def canny(img_u8: np.ndarray, lo: int = CANNY_LO, hi: int = CANNY_HI) -> np.ndarray:
@@ -53,35 +57,23 @@ def dilate(mask: np.ndarray, r: int = 1) -> np.ndarray:
     return out
 
 
-MASK_SIGMA = 2.0
-
-
 def _smoothed(ref_u8: np.ndarray, sigma: float) -> np.ndarray:
-    from ip.filters import gaussian_filter
-    from ip.io import to_uint8
-
-    return to_uint8(gaussian_filter(ref_u8, sigma))
+    """Maske tabanı: Gaussian_σ(ref) (uint8); sigma=0 → yumuşatmasız."""
+    return to_uint8(gaussian_filter(ref_u8, sigma)) if sigma > 0 else ref_u8
 
 
 def edge_mask(ref_u8: np.ndarray, r: int = 1, sigma: float = MASK_SIGMA) -> np.ndarray:
     """Nesne kenar maskesi: Canny(Gaussian_σ(ref)) + (2r+1)² dilate. sigma=0 → yumuşatmasız."""
-    base = _smoothed(ref_u8, sigma) if sigma > 0 else ref_u8
-    return dilate(canny(base), r)
+    return dilate(canny(_smoothed(ref_u8, sigma)), r)
 
 
 def flat_mask(
     ref_u8: np.ndarray, pct: float = 40.0, r: int = 3, sigma: float = MASK_SIGMA
 ) -> np.ndarray:
     """Düz bölge: yumuşatılmış referansta Sobel alt %pct'de VE nesne kenarlarından r px uzakta."""
-    base = _smoothed(ref_u8, sigma) if sigma > 0 else ref_u8
+    base = _smoothed(ref_u8, sigma)
     mag = sobel_mag(base)
     return (mag <= np.percentile(mag, pct)) & ~dilate(canny(base), r)
-
-
-def _laplacian(img: np.ndarray) -> np.ndarray:
-    from ip.filters import laplacian_vec
-
-    return laplacian_vec(img)
 
 
 def edge_sharpness(img: np.ndarray, mask: np.ndarray) -> float:
@@ -90,12 +82,12 @@ def edge_sharpness(img: np.ndarray, mask: np.ndarray) -> float:
 
 
 def laplacian_variance(img: np.ndarray) -> float:
-    return float(_laplacian(img).var())
+    return float(laplacian_vec(img).var())
 
 
 def flat_noise(img: np.ndarray, mask: np.ndarray) -> float:
     """Düz bölgede Laplacian yanıtının std'si (lineer gölgelemeyi yok sayar, yüksek frekans gürültüyü ölçer)."""
-    return float(_laplacian(img)[mask].std())
+    return float(laplacian_vec(img)[mask].std())
 
 
 def best_edge_roi(mask: np.ndarray, size: int = 40) -> tuple[int, int, int, int]:

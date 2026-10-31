@@ -11,10 +11,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
+from ip.enhance import histogram  # noqa: E402
+
 DPI = 150
 
 
-def _save(fig, path: str | Path) -> Path:
+def save_fig(fig, path: str | Path) -> Path:
+    """Figürü DPI ile kaydeder ve kapatır."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=DPI, bbox_inches="tight")
@@ -51,7 +54,7 @@ def grid(
     if suptitle:
         fig.suptitle(suptitle, fontsize=11)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)
 
 
 def histograms(
@@ -61,7 +64,7 @@ def histograms(
     n = len(images)
     fig, axes = plt.subplots(1, n, figsize=(3.6 * n, 2.8), squeeze=False)
     for ax, img, lab in zip(axes.flat, images, labels, strict=True):
-        hist = np.bincount(img.ravel(), minlength=256)
+        hist = histogram(img)
         ax.bar(np.arange(256), hist, width=1.0, color="0.35")
         ax.set_xlim(-2, 257)
         ax.set_title(f"{lab}\nmin={int(img.min())} max={int(img.max())}", fontsize=9)
@@ -73,7 +76,7 @@ def histograms(
     if title:
         fig.suptitle(title, fontsize=11)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)
 
 
 def zoom(img: np.ndarray, roi: tuple[int, int, int, int], scale: int = 8) -> np.ndarray:
@@ -99,16 +102,20 @@ def draw_rois(
     return rgb
 
 
+def _heat_panel(fig, ax, data, title, cmap, vmax, fontsize) -> None:
+    im = ax.imshow(data, cmap=cmap, vmin=0, vmax=vmax, interpolation="nearest")
+    ax.set_title(title, fontsize=fontsize)
+    ax.axis("off")
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+
 def heatmap(
     data: np.ndarray, path: str | Path, title: str, cmap: str = "magma", vmax: float | None = None
 ) -> Path:
     fig, ax = plt.subplots(figsize=(5, 4.4))
-    im = ax.imshow(data, cmap=cmap, vmin=0, vmax=vmax, interpolation="nearest")
-    ax.set_title(title, fontsize=10)
-    ax.axis("off")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    _heat_panel(fig, ax, data, title, cmap, vmax, fontsize=10)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)
 
 
 def heatmaps(
@@ -122,14 +129,11 @@ def heatmaps(
     n = len(datas)
     fig, axes = plt.subplots(1, n, figsize=(4.6 * n, 4.2), squeeze=False)
     for ax, d, t in zip(axes.flat, datas, titles, strict=True):
-        im = ax.imshow(d, cmap=cmap, vmin=0, vmax=vmax, interpolation="nearest")
-        ax.set_title(t, fontsize=9)
-        ax.axis("off")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        _heat_panel(fig, ax, d, t, cmap, vmax, fontsize=9)
     if suptitle:
         fig.suptitle(suptitle, fontsize=11)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)
 
 
 def profiles(
@@ -145,7 +149,7 @@ def profiles(
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)
 
 
 def bars(groups: dict[str, dict[str, float]], path: str | Path, title: str, ylabel: str) -> Path:
@@ -163,4 +167,4 @@ def bars(groups: dict[str, dict[str, float]], path: str | Path, title: str, ylab
     ax.grid(axis="y", alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()
-    return _save(fig, path)
+    return save_fig(fig, path)

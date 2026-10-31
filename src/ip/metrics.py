@@ -9,27 +9,35 @@ from pathlib import Path
 import numpy as np
 
 
+def _abs_diff(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    return np.abs(np.asarray(a, dtype=np.float64) - np.asarray(b, dtype=np.float64))
+
+
 def max_abs(a: np.ndarray, b: np.ndarray) -> float:
-    return float(np.max(np.abs(a.astype(np.float64) - b.astype(np.float64))))
+    return float(_abs_diff(a, b).max())
 
 
 def mean_abs(a: np.ndarray, b: np.ndarray) -> float:
-    return float(np.mean(np.abs(a.astype(np.float64) - b.astype(np.float64))))
+    return float(_abs_diff(a, b).mean())
+
+
+def _psnr_from_diff(diff: np.ndarray, peak: float = 255.0) -> float:
+    mse = float(np.mean(diff**2))
+    return math.inf if mse == 0 else 10.0 * math.log10(peak**2 / mse)
 
 
 def psnr(a: np.ndarray, b: np.ndarray, peak: float = 255.0) -> float:
     """PSNR (dB). Görüntüler özdeşse `inf` döner (JSON'a "inf" string'i olarak yazılır)."""
-    mse = float(np.mean((a.astype(np.float64) - b.astype(np.float64)) ** 2))
-    return math.inf if mse == 0 else 10.0 * math.log10(peak**2 / mse)
+    return _psnr_from_diff(_abs_diff(a, b), peak)
 
 
 def compare(a: np.ndarray, b: np.ndarray) -> dict:
     """Standart karşılaştırma paketi: max/mean abs diff, PSNR, farklı piksel oranı."""
-    diff = np.abs(a.astype(np.float64) - b.astype(np.float64))
+    diff = _abs_diff(a, b)
     return {
         "max_abs_diff": float(diff.max()),
         "mean_abs_diff": float(diff.mean()),
-        "psnr_db": psnr(a, b),
+        "psnr_db": _psnr_from_diff(diff),
         "pct_pixels_differ": float(np.mean(diff > 0) * 100.0),
     }
 

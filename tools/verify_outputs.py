@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 import sys
 
+import cv2
+
 from ip.io import DATA_DIR, OUTPUT_DIR, file_sha256
 
 EXPECTED = {
@@ -89,8 +91,6 @@ def main() -> int:
         for s in ("stretch", "he"):
             p = OUTPUT_DIR / "q1" / f"{n}_{s}.png"
             if p.is_file():
-                import cv2
-
                 img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
                 check(
                     f"q1 {n}_{s} aralık",

@@ -15,7 +15,7 @@ import numpy as np
 def output_shape(shape: tuple[int, int], scale: float) -> tuple[int, int]:
     """Çıkış boyutu = round(boyut * scale) (half-up; ASSUMPTION 6)."""
     h, w = shape
-    return int(math.floor(h * scale + 0.5)), int(math.floor(w * scale + 0.5))
+    return math.floor(h * scale + 0.5), math.floor(w * scale + 0.5)
 
 
 def bilinear_resize_loops(

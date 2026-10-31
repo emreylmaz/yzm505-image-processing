@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from ip.io import to_uint8
+
 
 def histogram(img_u8: np.ndarray) -> np.ndarray:
     """256 kutulu histogram: h[k] = #{piksel = k}."""
@@ -73,6 +75,4 @@ def equalize_builtin_skimage(img_u8: np.ndarray) -> np.ndarray:
     """skimage.exposure.equalize_hist [0,1] float döner (CDF_min çıkarılmaz) → ×255."""
     from skimage import exposure
 
-    return np.clip(np.rint(exposure.equalize_hist(img_u8, nbins=256) * 255), 0, 255).astype(
-        np.uint8
-    )
+    return to_uint8(exposure.equalize_hist(img_u8, nbins=256) * 255)
