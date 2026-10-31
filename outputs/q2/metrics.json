@@ -1,0 +1,269 @@
+{
+  "input": {
+    "file": "data/checkerboard.tif",
+    "shape": [
+      80,
+      80
+    ],
+    "levels": [
+      0,
+      179,
+      255
+    ]
+  },
+  "angle_deg": 30.0,
+  "shear_k": 0.3,
+  "canny_thresholds": [
+    50,
+    150
+  ],
+  "reference": "8×8 alt-piksel NN ortalaması (aliasing'siz box-filtre referansı)",
+  "cases": {
+    "original": {
+      "shape": [
+        80,
+        80
+      ],
+      "interp": "nearest",
+      "matrix": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "expected_gradient_deg": [
+        0.0,
+        90.0
+      ],
+      "manual_vs_cv2_warpAffine": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "vs_reference": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "edges": {
+        "canny_edge_pixels": 931,
+        "reference_canny_edge_pixels": 931,
+        "canny_exact_mismatch_pct": 0.0,
+        "canny_false_pct_1px": 0.0,
+        "canny_missed_pct_1px": 0.0,
+        "sobel_mae_vs_reference": 0.0,
+        "sobel_excess_energy_pct": 0.0,
+        "orientation": {
+          "n_strong": 924,
+          "mean_abs_dev_deg": 0.0,
+          "pct_off_axis_gt10deg": 0.0
+        }
+      }
+    },
+    "shear_nn": {
+      "shape": [
+        80,
+        104
+      ],
+      "interp": "nearest",
+      "matrix": [
+        [
+          1.0,
+          0.3,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "expected_gradient_deg": [
+        163.30075576600638,
+        90.0
+      ],
+      "manual_vs_cv2_warpAffine": {
+        "max_abs_diff": 255.0,
+        "mean_abs_diff": 0.03064903846153846,
+        "psnr_db": 39.20123326290724,
+        "pct_pixels_differ": 0.01201923076923077
+      },
+      "vs_reference": {
+        "max_abs_diff": 128.0,
+        "mean_abs_diff": 5.402318740266482,
+        "psnr_db": 22.14966356233373,
+        "pct_pixels_differ": 10.659283613081847
+      },
+      "edges": {
+        "canny_edge_pixels": 912,
+        "reference_canny_edge_pixels": 921,
+        "canny_exact_mismatch_pct": 23.355263157894736,
+        "canny_false_pct_1px": 0.0,
+        "canny_missed_pct_1px": 0.0,
+        "sobel_mae_vs_reference": 28.849348329939914,
+        "sobel_excess_energy_pct": 6.184583630378167,
+        "orientation": {
+          "n_strong": 740,
+          "mean_abs_dev_deg": 7.256762542184252,
+          "pct_off_axis_gt10deg": 29.324324324324323
+        }
+      }
+    },
+    "shear_bilinear": {
+      "shape": [
+        80,
+        104
+      ],
+      "interp": "bilinear",
+      "matrix": [
+        [
+          1.0,
+          0.3,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "expected_gradient_deg": [
+        163.30075576600638,
+        90.0
+      ],
+      "manual_vs_cv2_warpAffine": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.009975961538461538,
+        "psnr_db": 68.14125594782561,
+        "pct_pixels_differ": 0.9975961538461537
+      },
+      "vs_reference": {
+        "max_abs_diff": 8.0,
+        "mean_abs_diff": 0.24260252638864854,
+        "psnr_db": 47.4614430714934,
+        "pct_pixels_differ": 8.42706350579685
+      },
+      "edges": {
+        "canny_edge_pixels": 917,
+        "reference_canny_edge_pixels": 921,
+        "canny_exact_mismatch_pct": 5.343511450381679,
+        "canny_false_pct_1px": 0.0,
+        "canny_missed_pct_1px": 0.0,
+        "sobel_mae_vs_reference": 1.0122109288108105,
+        "sobel_excess_energy_pct": 0.23656462953276403,
+        "orientation": {
+          "n_strong": 547,
+          "mean_abs_dev_deg": 2.142008221416662,
+          "pct_off_axis_gt10deg": 8.226691042047532
+        }
+      }
+    },
+    "rot30_nn": {
+      "shape": [
+        109,
+        109
+      ],
+      "interp": "nearest",
+      "matrix": [
+        [
+          0.8660254037844387,
+          0.49999999999999994,
+          0.04199655051467488
+        ],
+        [
+          -0.49999999999999994,
+          0.8660254037844387,
+          39.54199655051467
+        ]
+      ],
+      "expected_gradient_deg": [
+        150.0,
+        60.00000000000001
+      ],
+      "manual_vs_cv2_warpAffine": {
+        "max_abs_diff": 255.0,
+        "mean_abs_diff": 0.10318996717448026,
+        "psnr_db": 34.75953571344257,
+        "pct_pixels_differ": 0.05050079959599361
+      },
+      "vs_reference": {
+        "max_abs_diff": 128.0,
+        "mean_abs_diff": 9.926644673006017,
+        "psnr_db": 19.60978370926853,
+        "pct_pixels_differ": 21.987191927032796
+      },
+      "edges": {
+        "canny_edge_pixels": 923,
+        "reference_canny_edge_pixels": 1198,
+        "canny_exact_mismatch_pct": 2.275189599133261,
+        "canny_false_pct_1px": 0.0,
+        "canny_missed_pct_1px": 0.0,
+        "sobel_mae_vs_reference": 52.78008761533348,
+        "sobel_excess_energy_pct": 10.758181290047318,
+        "orientation": {
+          "n_strong": 338,
+          "mean_abs_dev_deg": 6.275185509312539,
+          "pct_off_axis_gt10deg": 9.467455621301776
+        }
+      }
+    },
+    "rot30_bilinear": {
+      "shape": [
+        109,
+        109
+      ],
+      "interp": "bilinear",
+      "matrix": [
+        [
+          0.8660254037844387,
+          0.49999999999999994,
+          0.04199655051467488
+        ],
+        [
+          -0.49999999999999994,
+          0.8660254037844387,
+          39.54199655051467
+        ]
+      ],
+      "expected_gradient_deg": [
+        150.0,
+        60.00000000000001
+      ],
+      "manual_vs_cv2_warpAffine": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.00042083999663328003,
+        "psnr_db": 81.88963352413138,
+        "pct_pixels_differ": 0.042083999663328
+      },
+      "vs_reference": {
+        "max_abs_diff": 10.0,
+        "mean_abs_diff": 1.001940617116243,
+        "psnr_db": 40.358712575709646,
+        "pct_pixels_differ": 21.113914224723462
+      },
+      "edges": {
+        "canny_edge_pixels": 1219,
+        "reference_canny_edge_pixels": 1198,
+        "canny_exact_mismatch_pct": 1.9688269073010665,
+        "canny_false_pct_1px": 0.0,
+        "canny_missed_pct_1px": 0.0,
+        "sobel_mae_vs_reference": 3.691034307753922,
+        "sobel_excess_energy_pct": 0.637286462679309,
+        "orientation": {
+          "n_strong": 344,
+          "mean_abs_dev_deg": 3.3441866324815233,
+          "pct_off_axis_gt10deg": 5.232558139534884
+        }
+      }
+    }
+  },
+  "sobel_display_vmax": 1140.3946685248927
+}

@@ -1,0 +1,159 @@
+{
+  "input": {
+    "file": "data/cameraman.tif",
+    "shape": [
+      256,
+      256
+    ]
+  },
+  "scale": 1.7,
+  "resize": {
+    "out_shape": [
+      435,
+      435
+    ],
+    "ratio_x": 0.5885057471264368,
+    "ratio_y": 0.5885057471264368,
+    "loops_equals_vec_exact": true,
+    "loops_seconds": 0.17238010000437498,
+    "half_pixel_vs_cv2": {
+      "max_abs_diff": 1.0,
+      "mean_abs_diff": 0.12316025895098427,
+      "psnr_db": 57.2260976750858,
+      "pct_pixels_differ": 12.316025895098427
+    },
+    "naive_vs_cv2": {
+      "max_abs_diff": 52.0,
+      "mean_abs_diff": 2.4029964328180737,
+      "psnr_db": 33.30599314788427,
+      "pct_pixels_differ": 61.22446822565729
+    },
+    "half_pixel_mean_signed_diff": 0.12308627295547628,
+    "naive_mean_signed_diff": 0.07474170960496763,
+    "half_pixel_float_vs_cv2": {
+      "max_abs_diff": 0.7540229885057386,
+      "mean_abs_diff": 0.26216590183366334
+    },
+    "worked_example": {
+      "out_pixel_yx": [
+        100,
+        137
+      ],
+      "ratio_y": 0.5885057471264368,
+      "ratio_x": 0.5885057471264368,
+      "src_y": 58.644827586206894,
+      "src_x": 80.41954022988506,
+      "x0": 80,
+      "x1": 81,
+      "y0": 58,
+      "y1": 59,
+      "dx": 0.4195402298850581,
+      "dy": 0.644827586206894,
+      "neighbors": {
+        "I(x0,y0)": 185,
+        "I(x1,y0)": 183,
+        "I(x0,y1)": 180,
+        "I(x1,y1)": 183
+      },
+      "weights": {
+        "(1-dx)(1-dy)": 0.20616329766151534,
+        "dx(1-dy)": 0.1490091161315907,
+        "(1-dx)dy": 0.3742964724534265,
+        "dx*dy": 0.27053111375346744
+      },
+      "weights_sum": 1.0,
+      "value_float": 182.28943717796275,
+      "value_uint8": 182
+    },
+    "naive_diff_mean_topleft_quarter": 0.5673868312757202,
+    "naive_diff_mean_bottomright_quarter": 3.2989540466392318
+  },
+  "laplacian": {
+    "kernel": [
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        1.0,
+        -4.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "border": "reflect101 (== cv2.BORDER_REFLECT_101)",
+    "loops_seconds": 0.415726299979724,
+    "loops_equals_vec_exact": true,
+    "loops_vs_filter2d_float": {
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "psnr_db": "inf",
+      "pct_pixels_differ": 0.0
+    },
+    "loops_vs_cv2_laplacian_ksize1": {
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "psnr_db": "inf",
+      "pct_pixels_differ": 0.0
+    },
+    "range": [
+      -256.0,
+      241.0
+    ],
+    "pct_negative": 42.62914519751618
+  },
+  "sharpen": {
+    "formula": "S = I - c*L, c=1",
+    "manual_vs_builtin_same_input": {
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "psnr_db": "inf",
+      "pct_pixels_differ": 0.0
+    },
+    "manual_pipeline_vs_cv2_pipeline": {
+      "max_abs_diff": 6.0,
+      "mean_abs_diff": 0.9541709604967631,
+      "psnr_db": 43.319595852999484,
+      "pct_pixels_differ": 46.547760602457394
+    },
+    "pct_clipped_low": 1.6884661117717006,
+    "pct_clipped_high": 0.5025762980578676
+  },
+  "overflow": {
+    "uint8_saturated_vs_float_laplacian": {
+      "max_abs_diff": 256.0,
+      "mean_abs_diff": 3.5592072929052714,
+      "psnr_db": 27.180734035532296,
+      "pct_pixels_differ": 42.62914519751618
+    },
+    "uint8_wrapped_vs_float_laplacian": {
+      "max_abs_diff": 256.0,
+      "mean_abs_diff": 109.13061170564143,
+      "psnr_db": 3.6689380601190047,
+      "pct_pixels_differ": 42.62914519751618
+    },
+    "sharpen_with_saturated_vs_float": {
+      "max_abs_diff": 134.0,
+      "mean_abs_diff": 3.406664024309684,
+      "psnr_db": 28.183897661738328,
+      "pct_pixels_differ": 42.62914519751618
+    }
+  },
+  "border_modes": {
+    "reflect101_vs_replicate": {
+      "max_abs_diff": 21.0,
+      "n_pixels_differ": 857,
+      "n_inner_pixels_differ": 0
+    },
+    "reflect101_vs_zero": {
+      "max_abs_diff": 315.0,
+      "n_pixels_differ": 1736,
+      "n_inner_pixels_differ": 0
+    }
+  }
+}

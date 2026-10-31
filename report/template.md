@@ -17,7 +17,7 @@ bash report/build.sh             # bu rapor (.md + .docx)
 
 **Genel kurallar.** "Manual" fonksiyonlar çekirdek algoritma için OpenCV/scikit-image çağırmaz; yalnızca NumPy dizi işlemleri kullanır. Built-in fonksiyonlar yalnızca `*_builtin` adlı karşılaştırma sarmalayıcılarında kullanılır. Tüm hesaplar `float64` ile yapılır; [0, 255] aralığına clip ve `uint8` dönüşümü yalnızca en sonda uygulanır (`np.rint`: .5 değerleri çift sayıya yuvarlanır, OpenCV `saturate_cast` ile aynı davranış).
 
-**Doğrulama yaklaşımı.** Her manual fonksiyon için (i) küçük sentetik dizilerde el ile türetilmiş değerlerle, (ii) aynı border modu kullanılarak OpenCV karşılığıyla karşılaştıran otomatik testler yazılmıştır. Ayrıca kodu yazan süreçten bağımsız bir doğrulayıcı, beklenen değerleri yalnızca matematiksel tanımlardan türetip fonksiyonlarla karşılaştırmıştır (`tests/test_verifier_q*.py`).
+**Doğrulama yaklaşımı.** Her manual fonksiyon için (i) küçük sentetik dizilerde el ile türetilmiş değerlerle, (ii) aynı border modu kullanılarak OpenCV karşılığıyla karşılaştıran otomatik testler yazılmıştır. Ayrıca beklenen değerleri yalnızca matematiksel tanımlardan türeten ayrı doğrulama testleri yazılmıştır (`tests/test_verifier_q*.py`).
 
 ### Varsayımlar (ASSUMPTION)
 
@@ -30,6 +30,7 @@ bash report/build.sh             # bu rapor (.md + .docx)
 7. **Q3 — boyut:** Çıkış boyutu round(1.7·N) olarak alınmıştır ({{q3.input.shape}} → {{q3.resize.out_shape}}). Koordinat oranı, OpenCV'nin `dsize` verildiğinde kullandığı gibi giriş/çıkış boyutu oranıdır (1/1.7 değil).
 8. **Giriş formatı:** `.tif` dosyaları `uint8` değilse [0, 255] aralığına lineer ölçeklenir (ör. MATLAB `checkerboard` görüntüsü `double` tipindedir).
 9. **Giriş kaynağı:** `pout.tif`, `tire.tif`, `cameraman.tif` MATLAB Image Processing Toolbox'ın orijinal demo dosyalarıdır. MATLAB'da hazır bir `checkerboard.tif` dosyası yoktur; `checkerboard` bir fonksiyondur. Bu dosya, `I = checkerboard; imwrite(I, 'checkerboard.tif')` ile birebir aynı algoritmayla `tools/make_checkerboard.py` tarafından üretilmiştir. Varsayılan parametreler n = 10 ve p = q = 4'tür; sonuç 80×80 boyutundadır, sağ yarıdaki açık kareler 0.7 gri tonundadır (uint8'de 179). Eğitmenin dosyası farklıysa yalnızca `data/checkerboard.tif` değiştirilip pipeline yeniden çalıştırılır.
+10. **Q3 — Laplacian:** Kernel ve keskinleştirme katsayısı sınavda verilmemiştir; 4-komşu kernel [[0, 1, 0], [1, −4, 1], [0, 1, 0]] ve c = 1 seçilmiştir. Laplacian resize edilmiş görüntüye uygulanır.
 
 ---
 
@@ -41,7 +42,7 @@ Lineer germe, görüntünün mevcut [r_min, r_max] aralığını [0, 255] aralı
 
 $$ s = \frac{r - r_{min}}{r_{max} - r_{min}} \cdot 255 $$
 
-Bu dönüşüm, en koyu pikseli 0'a ve en parlak pikseli 255'e götürdüğü için çıktının tam [0, 255] aralığını kullanmasını garanti eder. Gri seviyeler arasındaki sıralama ve oranlar korunur; histogramın **şekli** değişmez, yalnızca genişler.
+Bu dönüşüm, en koyu pikseli 0'a ve en parlak pikseli 255'e götürdüğü için çıktının tam [0, 255] aralığını kullanmasını garanti eder. Gri seviyelerin sıralaması ve seviyeler arası farkların oranları korunur (affine dönüşüm); histogramın **şekli** değişmez, yalnızca genişler.
 
 {{code:ip.enhance.contrast_stretch}}
 
@@ -77,7 +78,7 @@ Orijinal pout görüntüsü yalnızca [{{q1.pout.enhance.original.min}}, {{q1.po
 
 {{table:q1_enhance:tire}}
 
-Orijinal tire görüntüsü [{{q1.tire.enhance.original.min}}, {{q1.tire.enhance.original.max}}] aralığında ve ortalaması {{q1.tire.enhance.original.mean|.1f}} olan karanlık bir görüntüdür. HE sonrası ortalama {{q1.tire.enhance.he.mean|.1f}} olmuş, CDF sapması {{q1.tire.enhance.original.cdf_linearity_max_dev|.3f}} → {{q1.tire.enhance.he.cdf_linearity_max_dev|.3f}} olarak ölçülmüştür. {{auto:he_cv2:tire}}
+Orijinal tire görüntüsü [{{q1.tire.enhance.original.min}}, {{q1.tire.enhance.original.max}}] aralığında ve ortalaması {{q1.tire.enhance.original.mean|.1f}} olan karanlık bir görüntüdür. HE sonrası ortalama {{q1.tire.enhance.he.mean|.1f}} olmuş, CDF sapması {{q1.tire.enhance.original.cdf_linearity_max_dev|.3f}} → {{q1.tire.enhance.he.cdf_linearity_max_dev|.3f}} olarak ölçülmüştür. {{auto:he_cv2:tire}} {{auto:stretch_note:tire}}
 
 ### 1.5 Filtreler: Mean, Median ve Gaussian
 
@@ -127,7 +128,7 @@ Orijinal tire görüntüsü [{{q1.tire.enhance.original.min}}, {{q1.tire.enhance
 
 ### 1.7 Mean ve Median: Nesne Kenarlarında Karşılaştırma
 
-Aşağıdaki zoom görüntüleri, HE görüntüsünde nesne kenar yoğunluğunun en yüksek olduğu 40×40 pencereden (otomatik ve deterministik seçim; pout için ROI (y, x, h, w) = {{q1.pout.edge_roi_yxhw}}, tire için {{q1.tire.edge_roi_yxhw}}) alınmış ve piksel yapısı görünsün diye NEAREST ile ×6 büyütülmüştür.
+Aşağıdaki zoom görüntüleri, HE görüntüsünde nesne kenar yoğunluğunun en yüksek olduğu 40×40 pencereden (otomatik ve deterministik seçim; pout için ROI (y, x, h, w) = {{q1.pout.edge_roi_yxhw|tuple}}, tire için {{q1.tire.edge_roi_yxhw|tuple}}) alınmış ve piksel yapısı görünsün diye NEAREST ile ×6 büyütülmüştür.
 
 {{fig:q1/pout_fig_edge_zoom.png|pout: kenar ROI'sinde Mean ve Median karşılaştırması}}
 
@@ -228,7 +229,7 @@ Metrikler, görüntünün tuval sınırından (görüntü/arka plan kenarı) 3 p
 
 ### 2.5 NN Aliasing'in Sobel'de Oluşturduğu Hatalı Kenarlar (Zoom)
 
-Aşağıdaki kırpmalar **sabit ROI koordinatlarıyla** programatik olarak alınmış ve piksellerin görünür kalması için NEAREST ile ×8 büyütülmüştür. Her figürde satırlar NN / Bilinear / Referans, sütunlar görüntü / Sobel / Canny'dir. Canny panelinde yeşil = referansla uyumlu kenar, kırmızı = referanstan 1 pikselden uzak (false) kenar, mavi = kaçırılan referans kenarıdır.
+Aşağıdaki kırpmalar **sabit ROI koordinatlarıyla** programatik olarak alınmış ve piksellerin görünür kalması için NEAREST ile ×8 büyütülmüştür. Her figürde satırlar NN / Bilinear / Referans, sütunlar görüntü / Sobel / Canny'dir. Canny panelinde yeşil = referansla uyumlu kenar, kırmızı = referanstan 1 pikselden uzak (false) kenar, mavi = kaçırılan referans kenarıdır. Bu veride 1 piksel toleransla false edge oranı NN için %{{q2.cases.rot30_nn.edges.canny_false_pct_1px|.1f}} olduğundan kırmızı piksel görünmez: aliasing Canny'de kenarın **konumunu** değil, zincirin **sürekliliğini ve sayısını** etkiler (rot30 kenar piksel sayısı: NN {{q2.cases.rot30_nn.edges.canny_edge_pixels}}, Bilinear {{q2.cases.rot30_bilinear.edges.canny_edge_pixels}}, referans {{q2.cases.rot30_nn.edges.reference_canny_edge_pixels}}). Sahte kenar etkisi esas olarak Sobel'de görülür.
 
 {{fig:q2/fig_roi_map_rot30.png|Rotation 30° (NN) üzerinde ROI konumları}}
 
@@ -240,7 +241,7 @@ Aşağıdaki kırpmalar **sabit ROI koordinatlarıyla** programatik olarak alın
 
 **Açıklama.** NN interpolasyonu her çıkış pikseline en yakın kaynak pikselin değerini kopyalar ve ara değer üretmez. 30° eğik bir karo kenarı bu nedenle yatay ve dikey basamaklardan oluşan bir merdiven (staircase / jaggies) şeklinde örneklenir: kenar boyunca birkaç piksel yatay ilerler, sonra 1 piksel dikey zıplar. Sobel operatörü yerel türev aldığı için bu basamakların **her birini ayrı bir yatay veya dikey mini kenar** olarak algılar:
 
-1. Gradyan yönü, gerçek kenarın normali olan {{q2.cases.rot30_nn.expected_gradient_deg.0|.0f}}° / {{q2.cases.rot30_nn.expected_gradient_deg.1|.0f}}° yerine 0° ve 90°'ye kayar (yön histogramında NN eğrisinin eksenlerde biriken bileşenleri; beklenen yönden 10°'den fazla sapan güçlü piksel oranı: NN %{{q2.cases.rot30_nn.edges.orientation.pct_off_axis_gt10deg|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.orientation.pct_off_axis_gt10deg|.1f}}).
+1. Gradyan yönü, gerçek kenarın normali olan {{q2.cases.rot30_nn.expected_gradient_deg.0|.0f}}° / {{q2.cases.rot30_nn.expected_gradient_deg.1|.0f}}° çevresinde tek tepe yerine ayrık yan tepelere bölünür; basamaklı sınır gerçek eğimin iki yanındaki açılarda gradyan üretir (yön histogramındaki NN eğrisi; shear NN'de ayrıca 0°'de bir tepe oluşur; beklenen yönden 10°'den fazla sapan güçlü piksel oranı: NN %{{q2.cases.rot30_nn.edges.orientation.pct_off_axis_gt10deg|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.orientation.pct_off_axis_gt10deg|.1f}}).
 2. Kenar şiddeti basamak köşelerinde tam kontrastla sıçrar, basamakların ortasında ise farklı davranır; Sobel çıktısı düzgün bir çizgi yerine kesikli ve kalınlığı değişen bir desen gösterir. Bu, gerçek sahnede bulunmayan **hatalı (false) kenar** enerjisidir (fazla enerji: NN %{{q2.cases.rot30_nn.edges.sobel_excess_energy_pct|.1f}}, Bilinear %{{q2.cases.rot30_bilinear.edges.sobel_excess_energy_pct|.1f}}).
 3. Canny, inceltme (non-maximum suppression) ve histerezis sonrası bu basamakları takip eder; zoom panellerinde NN Canny zincirinin eğik çizgi yerine basamaklı ilerlediği görülür. {{auto:q2_canny}}
 
@@ -272,9 +273,9 @@ Raporda istenen sürüm aşağıdadır: dış döngü çıkış satırları (y),
 
 {{code:ip.resize.bilinear_resize_loops}}
 
-Aynı aritmetiği NumPy broadcasting ile yapan bir ikiz (`bilinear_resize_vec`) de yazılmış ve döngü sürümüyle **bit düzeyinde aynı** olduğu doğrulanmıştır (cameraman üzerinde: {{q3.resize.loops_equals_vec_exact}}). Döngü sürümünün çalışma süresi: {{q3.resize.loops_seconds|.2f}} s.
+Aynı aritmetiği NumPy broadcasting ile yapan bir ikiz (`bilinear_resize_vec`) de yazılmış ve döngü sürümüyle **bit düzeyinde aynı** olduğu doğrulanmıştır (cameraman üzerinde bit düzeyinde eşitlik kontrolü: {{q3.resize.loops_equals_vec_exact}}). Döngü sürümünün çalışma süresi: {{q3.resize.loops_seconds|.2f}} s.
 
-**Sayısal örnek** (çıkış pikseli (y, x) = {{q3.resize.worked_example.out_pixel_yx}}): $s_y$ = {{q3.resize.worked_example.src_y|.4f}}, $s_x$ = {{q3.resize.worked_example.src_x|.4f}} → $x_0$ = {{q3.resize.worked_example.x0}}, $x_1$ = {{q3.resize.worked_example.x1}}, $y_0$ = {{q3.resize.worked_example.y0}}, $y_1$ = {{q3.resize.worked_example.y1}}, $d_x$ = {{q3.resize.worked_example.dx|.4f}}, $d_y$ = {{q3.resize.worked_example.dy|.4f}}.
+**Sayısal örnek** (çıkış pikseli (y, x) = {{q3.resize.worked_example.out_pixel_yx|tuple}}): $s_y$ = {{q3.resize.worked_example.src_y|.4f}}, $s_x$ = {{q3.resize.worked_example.src_x|.4f}} → $x_0$ = {{q3.resize.worked_example.x0}}, $x_1$ = {{q3.resize.worked_example.x1}}, $y_0$ = {{q3.resize.worked_example.y0}}, $y_1$ = {{q3.resize.worked_example.y1}}, $d_x$ = {{q3.resize.worked_example.dx|.4f}}, $d_y$ = {{q3.resize.worked_example.dy|.4f}}.
 
 {{table:q3_example}}
 
@@ -284,7 +285,7 @@ Aynı aritmetiği NumPy broadcasting ile yapan bir ikiz (`bilinear_resize_vec`) 
 
 $$ L(y,x) = I(y-1,x) + I(y+1,x) + I(y,x-1) + I(y,x+1) - 4\,I(y,x) $$
 
-Görüntü önce `reflect101` modunda 1 piksel padding'lenir; ardından dört iç içe döngü (y, x, kernel satırı i, kernel sütunu j) ile korelasyon toplamı hesaplanır. Hesap `float64` ile yapıldığı için negatif değerler ve 255'i aşan değerler korunur (uint8 taşması yoktur). Merkez katsayısı negatif olduğundan keskinleştirme $S = I - c\cdot L$ (c = 1) ile yapılır.
+Görüntü önce `reflect101` modunda 1 piksel padding'lenir; ardından dört iç içe döngü (y, x, kernel satırı i, kernel sütunu j) ile korelasyon toplamı hesaplanır. Hesap `float64` ile yapıldığı için negatif değerler ve 255'i aşan değerler korunur (uint8 taşması yoktur). Merkez katsayısı negatif olduğundan keskinleştirme $S = I - c\cdot L$ (c = 1) ile yapılır. Laplacian, sınavın sırasına uygun olarak **resize edilmiş** (manual Bilinear, {{q3.resize.out_shape}}) görüntüye uygulanmıştır.
 
 {{code:ip.filters.laplacian_loops}}
 
@@ -334,6 +335,6 @@ Tam pipeline'da (manuel resize → manuel Laplacian → keskinleştirme ile cv2.
 
 | Soru | Ana bulgu | Kanıt |
 | --- | --- | --- |
-| Q1 | Manuel Contrast Stretching ve HE her iki görüntüde çıktıyı [0, 255] aralığına yaydı; `cv2.equalizeHist` ile maksimum fark: pout {{q1.pout.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}, tire {{q1.tire.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}. Kenar keskinliğini en iyi koruyan filtre: {{q1.pout.verdict.he.best_sharpness_only}} (pout), {{q1.tire.verdict.he.best_sharpness_only}} (tire). | Bölüm 1.3–1.9 |
+| Q1 | Manuel Contrast Stretching ve HE çıktıları her iki görüntüde tam [0, 255] aralığını kapsıyor (tire zaten tam aralıkta olduğundan stretching onda özdeşlik dönüşümü oldu); `cv2.equalizeHist` ile maksimum fark: pout {{q1.pout.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}, tire {{q1.tire.enhance.he_vs_cv2_equalizeHist.max_abs_diff}}. Doğal gürültüde en iyi gürültü–keskinlik dengesi: {{q1.pout.verdict.he.best_label}} (pout), {{q1.tire.verdict.he.best_label}} (tire); impulsif gürültüde en iyi: {{q1.pout.verdict.he.saltpepper_best_psnr}} (pout), {{q1.tire.verdict.he.saltpepper_best_psnr}} (tire); {{auto:mvm_short}} | Bölüm 1.3–1.9 |
 | Q2 | NN rotation'da Sobel fazla (false) kenar enerjisi %{{q2.cases.rot30_nn.edges.sobel_excess_energy_pct|.1f}}, Bilinear'da %{{q2.cases.rot30_bilinear.edges.sobel_excess_energy_pct|.1f}}; NN basamakları gradyan yönünü eksenlere kaydırıyor. | Bölüm 2.4–2.5 |
 | Q3 | Half-pixel kuralıyla manuel Bilinear ile cv2.resize arasındaki maksimum fark: {{q3.resize.half_pixel_vs_cv2.max_abs_diff}} (PSNR {{q3.resize.half_pixel_vs_cv2.psnr_db|.2f}} dB); nested-loop Laplacian ile cv2.filter2D arasındaki maksimum fark: {{q3.laplacian.loops_vs_filter2d_float.max_abs_diff}}. | Bölüm 3.5–3.6 |

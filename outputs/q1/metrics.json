@@ -1,0 +1,598 @@
+{
+  "sharpness_metric": "SEÇİLMİŞ METRİK: nesne kenar maskesi içindeki ortalama Sobel gradyan büyüklüğü. Maske, filtrelenmemiş iyileştirilmiş görüntünün Gaussian σ=2 ile yumuşatılmış kopyasında Canny(50,150) + 3×3 dilate ile çıkarılır (gürültü kenar sayılmaz) ve tüm filtrelere aynı uygulanır. Gürültü: düz bölgede (yumuşatılmış Sobel alt %40, kenarlardan ≥3 px uzak) Laplacian yanıtının std'si.",
+  "borders": {
+    "mean": "reflect101",
+    "gaussian": "reflect101",
+    "median": "replicate"
+  },
+  "pout": {
+    "input": {
+      "file": "data/pout.tif",
+      "shape": [
+        291,
+        240
+      ],
+      "min": 74,
+      "max": 224,
+      "mean": 110.3036941580756
+    },
+    "enhance": {
+      "original": {
+        "min": 74,
+        "max": 224,
+        "mean": 110.3036941580756,
+        "std": 23.180962561967927,
+        "n_levels": 121,
+        "cdf_linearity_max_dev": 0.38098005525234147
+      },
+      "stretch": {
+        "min": 0,
+        "max": 255,
+        "mean": 61.70953608247423,
+        "std": 39.396410277335,
+        "n_levels": 121,
+        "cdf_linearity_max_dev": 0.4663853513914156
+      },
+      "he": {
+        "min": 0,
+        "max": 255,
+        "mean": 130.38296105383733,
+        "std": 72.65972267765774,
+        "n_levels": 66,
+        "cdf_linearity_max_dev": 0.0019734182332726835
+      },
+      "he_vs_cv2_equalizeHist": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "he_vs_skimage_equalize_hist": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.03457903780068729,
+        "psnr_db": 62.74267456477893,
+        "pct_pixels_differ": 3.4579037800687287
+      }
+    },
+    "builtin_check": {
+      "mean3_vs_cv2_blur": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "median3_vs_cv2_medianBlur": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "gauss_s1_vs_cv2_GaussianBlur": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.0090922107674685,
+        "psnr_db": 68.54410866273449,
+        "pct_pixels_differ": 0.90922107674685
+      },
+      "gauss_s2_vs_cv2_GaussianBlur": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.050758877434135166,
+        "psnr_db": 61.075683520463386,
+        "pct_pixels_differ": 5.075887743413516
+      }
+    },
+    "filters": {
+      "stretch": {
+        "edge_mask_pixels": 2154,
+        "flat_mask_pixels": 28075,
+        "filters": {
+          "unfiltered": {
+            "edge_sharpness": 214.7945519772707,
+            "laplacian_var": 182.88915453760944,
+            "flat_noise": 9.637243321497891,
+            "sharpness_retained_pct": 100.0,
+            "noise_reduction_pct": 0.0
+          },
+          "mean3": {
+            "edge_sharpness": 186.2283381763596,
+            "laplacian_var": 30.555724121999027,
+            "flat_noise": 2.9645484733555514,
+            "sharpness_retained_pct": 86.70068046980357,
+            "noise_reduction_pct": 69.23862587611018
+          },
+          "mean5": {
+            "edge_sharpness": 147.62310232703027,
+            "laplacian_var": 10.155725159389025,
+            "flat_noise": 1.9324560156232171,
+            "sharpness_retained_pct": 68.72758222594565,
+            "noise_reduction_pct": 79.94804166340317
+          },
+          "median3": {
+            "edge_sharpness": 199.8613719465091,
+            "laplacian_var": 105.9496569150367,
+            "flat_noise": 5.3389254481353765,
+            "sharpness_retained_pct": 93.047691436633,
+            "noise_reduction_pct": 44.60111392823522
+          },
+          "median5": {
+            "edge_sharpness": 176.63978318749798,
+            "laplacian_var": 69.97724992894084,
+            "flat_noise": 3.7909372187043937,
+            "sharpness_retained_pct": 82.23662172129478,
+            "noise_reduction_pct": 60.66367640372934
+          },
+          "gauss_s1": {
+            "edge_sharpness": 176.95940223723167,
+            "laplacian_var": 22.73101164447718,
+            "flat_noise": 2.518459487792504,
+            "sharpness_retained_pct": 82.3854239356859,
+            "noise_reduction_pct": 73.86742864347367
+          },
+          "gauss_s2": {
+            "edge_sharpness": 121.97660250112384,
+            "laplacian_var": 5.2926903483531005,
+            "flat_noise": 1.5691554706127937,
+            "sharpness_retained_pct": 56.787568110215034,
+            "noise_reduction_pct": 83.7177975250198
+          }
+        }
+      },
+      "he": {
+        "edge_mask_pixels": 8912,
+        "flat_mask_pixels": 25903,
+        "filters": {
+          "unfiltered": {
+            "edge_sharpness": 193.24091048384727,
+            "laplacian_var": 719.1508789750078,
+            "flat_noise": 23.811201634692168,
+            "sharpness_retained_pct": 100.0,
+            "noise_reduction_pct": 0.0
+          },
+          "mean3": {
+            "edge_sharpness": 167.71529290690813,
+            "laplacian_var": 81.22196380058362,
+            "flat_noise": 6.126179750969776,
+            "sharpness_retained_pct": 86.7907796992745,
+            "noise_reduction_pct": 74.27185807353743
+          },
+          "mean5": {
+            "edge_sharpness": 135.3482454978743,
+            "laplacian_var": 24.796458914558755,
+            "flat_noise": 3.3487871115382877,
+            "sharpness_retained_pct": 70.04119632793174,
+            "noise_reduction_pct": 85.93608519672854
+          },
+          "median3": {
+            "edge_sharpness": 179.17171235800726,
+            "laplacian_var": 360.12234235423887,
+            "flat_noise": 12.809914514062129,
+            "sharpness_retained_pct": 92.71934804560132,
+            "noise_reduction_pct": 46.2021501031746
+          },
+          "median5": {
+            "edge_sharpness": 159.96968212724562,
+            "laplacian_var": 237.54096932327076,
+            "flat_noise": 9.315497449012906,
+            "sharpness_retained_pct": 82.78251314729613,
+            "noise_reduction_pct": 60.87766761237064
+          },
+          "gauss_s1": {
+            "edge_sharpness": 159.95237784257824,
+            "laplacian_var": 57.30395831857204,
+            "flat_noise": 4.918291399085189,
+            "sharpness_retained_pct": 82.77355837440459,
+            "noise_reduction_pct": 79.34463167990903
+          },
+          "gauss_s2": {
+            "edge_sharpness": 113.20661756985159,
+            "laplacian_var": 10.990086257543014,
+            "flat_noise": 2.20214311506491,
+            "sharpness_retained_pct": 58.583152649404624,
+            "noise_reduction_pct": 90.75165063548722
+          }
+        }
+      }
+    },
+    "edge_roi_yxhw": [
+      97,
+      113,
+      40,
+      40
+    ],
+    "edge_roi_note": "HE görüntüsünün nesne kenar maskesinde (Canny(Gaussian σ=2)) kenar yoğunluğu en yüksek 40×40 pencere (otomatik, deterministik)",
+    "profile_row": 117,
+    "salt_pepper": {
+      "p": 0.02,
+      "seed": 505,
+      "results": {
+        "noisy": {
+          "psnr_vs_clean_db": 21.940357937657197,
+          "edge_sharpness": 207.25245947393233
+        },
+        "mean3": {
+          "psnr_vs_clean_db": 28.11254310616384,
+          "edge_sharpness": 167.69726250678775
+        },
+        "mean5": {
+          "psnr_vs_clean_db": 26.54102465458991,
+          "edge_sharpness": 133.62327748546406
+        },
+        "median3": {
+          "psnr_vs_clean_db": 32.0690129545167,
+          "edge_sharpness": 179.33410824995227
+        },
+        "median5": {
+          "psnr_vs_clean_db": 28.401494906320902,
+          "edge_sharpness": 160.12081627012935
+        },
+        "gauss_s1": {
+          "psnr_vs_clean_db": 28.47437329148555,
+          "edge_sharpness": 159.26587451212595
+        },
+        "gauss_s2": {
+          "psnr_vs_clean_db": 25.45842856642084,
+          "edge_sharpness": 111.27218332122399
+        },
+        "clean_edge_sharpness": 193.24091048384727
+      }
+    },
+    "verdict": {
+      "he": {
+        "balance_score": {
+          "mean3": 80.04478954341702,
+          "mean5": 77.17875521463435,
+          "median3": 61.6727186642294,
+          "median5": 70.16009993651195,
+          "gauss_s1": 81.02283278455377,
+          "gauss_s2": 71.20266254640799
+        },
+        "best": "gauss_s1",
+        "best_label": "Gaussian σ=1 (7×7)",
+        "best_sharpness_only": "Median 3×3",
+        "mean_vs_median": {
+          "k3": {
+            "mean_sharpness_retained_pct": 86.7907796992745,
+            "median_sharpness_retained_pct": 92.71934804560132,
+            "mean_noise_reduction_pct": 74.27185807353743,
+            "median_noise_reduction_pct": 46.2021501031746,
+            "median_sharper": true
+          },
+          "k5": {
+            "mean_sharpness_retained_pct": 70.04119632793174,
+            "median_sharpness_retained_pct": 82.78251314729613,
+            "mean_noise_reduction_pct": 85.93608519672854,
+            "median_noise_reduction_pct": 60.87766761237064,
+            "median_sharper": true
+          }
+        },
+        "saltpepper_best_psnr": "Median 3×3",
+        "saltpepper_best_key": "median3",
+        "saltpepper_second": "Gaussian σ=1 (7×7)",
+        "saltpepper_margin_db": 3.5946396630311526
+      },
+      "stretch": {
+        "balance_score": {
+          "mean3": 76.99195435609563,
+          "mean5": 73.91441130005587,
+          "median3": 60.29882606716394,
+          "median5": 69.82176908087096,
+          "gauss_s1": 77.89425054814367,
+          "gauss_s2": 67.67186587495061
+        },
+        "best": "gauss_s1",
+        "best_label": "Gaussian σ=1 (7×7)",
+        "best_sharpness_only": "Median 3×3",
+        "mean_vs_median": {
+          "k3": {
+            "mean_sharpness_retained_pct": 86.70068046980357,
+            "median_sharpness_retained_pct": 93.047691436633,
+            "mean_noise_reduction_pct": 69.23862587611018,
+            "median_noise_reduction_pct": 44.60111392823522,
+            "median_sharper": true
+          },
+          "k5": {
+            "mean_sharpness_retained_pct": 68.72758222594565,
+            "median_sharpness_retained_pct": 82.23662172129478,
+            "mean_noise_reduction_pct": 79.94804166340317,
+            "median_noise_reduction_pct": 60.66367640372934,
+            "median_sharper": true
+          }
+        }
+      }
+    }
+  },
+  "tire": {
+    "input": {
+      "file": "data/tire.tif",
+      "shape": [
+        205,
+        232
+      ],
+      "min": 0,
+      "max": 255,
+      "mean": 53.66278385197645
+    },
+    "enhance": {
+      "original": {
+        "min": 0,
+        "max": 255,
+        "mean": 53.66278385197645,
+        "std": 62.17636033098068,
+        "n_levels": 256,
+        "cdf_linearity_max_dev": 0.44575520704497107
+      },
+      "stretch": {
+        "min": 0,
+        "max": 255,
+        "mean": 53.66278385197645,
+        "std": 62.17636033098068,
+        "n_levels": 256,
+        "cdf_linearity_max_dev": 0.44575520704497107
+      },
+      "he": {
+        "min": 0,
+        "max": 255,
+        "mean": 128.15613961312027,
+        "std": 72.79208361541703,
+        "n_levels": 142,
+        "cdf_linearity_max_dev": 0.01018280314648988
+      },
+      "he_vs_cv2_equalizeHist": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "he_vs_skimage_equalize_hist": {
+        "max_abs_diff": 3.0,
+        "mean_abs_diff": 1.3447014297729185,
+        "psnr_db": 43.77402321919115,
+        "pct_pixels_differ": 78.49663582842726
+      }
+    },
+    "builtin_check": {
+      "mean3_vs_cv2_blur": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "median3_vs_cv2_medianBlur": {
+        "max_abs_diff": 0.0,
+        "mean_abs_diff": 0.0,
+        "psnr_db": "inf",
+        "pct_pixels_differ": 0.0
+      },
+      "gauss_s1_vs_cv2_GaussianBlur": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.013666947014297728,
+        "psnr_db": 66.77408850171709,
+        "pct_pixels_differ": 1.3666947014297728
+      },
+      "gauss_s2_vs_cv2_GaussianBlur": {
+        "max_abs_diff": 1.0,
+        "mean_abs_diff": 0.06480235492010092,
+        "psnr_db": 60.01489572432164,
+        "pct_pixels_differ": 6.480235492010092
+      }
+    },
+    "filters": {
+      "stretch": {
+        "edge_mask_pixels": 8659,
+        "flat_mask_pixels": 18699,
+        "filters": {
+          "unfiltered": {
+            "edge_sharpness": 212.79386073973942,
+            "laplacian_var": 652.9239824685175,
+            "flat_noise": 14.156278550812143,
+            "sharpness_retained_pct": 100.0,
+            "noise_reduction_pct": 0.0
+          },
+          "mean3": {
+            "edge_sharpness": 187.14764073602626,
+            "laplacian_var": 90.87220551252688,
+            "flat_noise": 3.4733559043693196,
+            "sharpness_retained_pct": 87.94785718227082,
+            "noise_reduction_pct": 75.46420203655816
+          },
+          "mean5": {
+            "edge_sharpness": 154.5334149546245,
+            "laplacian_var": 29.402118571751426,
+            "flat_noise": 2.1001434692009493,
+            "sharpness_retained_pct": 72.62118108925559,
+            "noise_reduction_pct": 85.16457936552496
+          },
+          "median3": {
+            "edge_sharpness": 201.09089932531208,
+            "laplacian_var": 393.82834052122024,
+            "flat_noise": 9.268245770215712,
+            "sharpness_retained_pct": 94.50032939214313,
+            "noise_reduction_pct": 34.529080245570654
+          },
+          "median5": {
+            "edge_sharpness": 185.42052764951268,
+            "laplacian_var": 263.41206660958915,
+            "flat_noise": 7.751924335408225,
+            "sharpness_retained_pct": 87.13622047409248,
+            "noise_reduction_pct": 45.240380036436214
+          },
+          "gauss_s1": {
+            "edge_sharpness": 179.5097619806428,
+            "laplacian_var": 66.57947236362408,
+            "flat_noise": 2.691876887995636,
+            "sharpness_retained_pct": 84.3585248919351,
+            "noise_reduction_pct": 80.98457247550273
+          },
+          "gauss_s2": {
+            "edge_sharpness": 131.6179381193293,
+            "laplacian_var": 13.055571484313383,
+            "flat_noise": 1.4248359290601023,
+            "sharpness_retained_pct": 61.852319264185205,
+            "noise_reduction_pct": 89.93495413398487
+          }
+        }
+      },
+      "he": {
+        "edge_mask_pixels": 9829,
+        "flat_mask_pixels": 16731,
+        "filters": {
+          "unfiltered": {
+            "edge_sharpness": 213.5321040747965,
+            "laplacian_var": 1982.1752501306835,
+            "flat_noise": 29.36143707807488,
+            "sharpness_retained_pct": 100.0,
+            "noise_reduction_pct": 0.0
+          },
+          "mean3": {
+            "edge_sharpness": 176.54071262901815,
+            "laplacian_var": 156.82577222804218,
+            "flat_noise": 7.013685132710231,
+            "sharpness_retained_pct": 82.67642628912563,
+            "noise_reduction_pct": 76.11259587172056
+          },
+          "mean5": {
+            "edge_sharpness": 139.9786251289472,
+            "laplacian_var": 41.84782909384172,
+            "flat_noise": 3.7496925943843538,
+            "sharpness_retained_pct": 65.55390147793193,
+            "noise_reduction_pct": 87.22919254798884
+          },
+          "median3": {
+            "edge_sharpness": 187.96895767817486,
+            "laplacian_var": 679.655595029005,
+            "flat_noise": 13.469872202823051,
+            "sharpness_retained_pct": 88.02842949195717,
+            "noise_reduction_pct": 54.12393416914381
+          },
+          "median5": {
+            "edge_sharpness": 163.88211592059764,
+            "laplacian_var": 372.24844515997154,
+            "flat_noise": 9.043349086617518,
+            "sharpness_retained_pct": 76.74823260449523,
+            "noise_reduction_pct": 69.19990985941735
+          },
+          "gauss_s1": {
+            "edge_sharpness": 167.66105160307444,
+            "laplacian_var": 106.09983272468541,
+            "flat_noise": 5.426343113214343,
+            "sharpness_retained_pct": 78.51795978385796,
+            "noise_reduction_pct": 81.51880952289503
+          },
+          "gauss_s2": {
+            "edge_sharpness": 116.95052762605188,
+            "laplacian_var": 14.032699236624481,
+            "flat_noise": 2.03408604064214,
+            "sharpness_retained_pct": 54.76952898149975,
+            "noise_reduction_pct": 93.07225312155767
+          }
+        }
+      }
+    },
+    "edge_roi_yxhw": [
+      22,
+      121,
+      40,
+      40
+    ],
+    "edge_roi_note": "HE görüntüsünün nesne kenar maskesinde (Canny(Gaussian σ=2)) kenar yoğunluğu en yüksek 40×40 pencere (otomatik, deterministik)",
+    "profile_row": 42,
+    "salt_pepper": {
+      "p": 0.02,
+      "seed": 505,
+      "results": {
+        "noisy": {
+          "psnr_vs_clean_db": 21.79936917403689,
+          "edge_sharpness": 225.9709319001879
+        },
+        "mean3": {
+          "psnr_vs_clean_db": 25.32096622133508,
+          "edge_sharpness": 175.79376910960724
+        },
+        "mean5": {
+          "psnr_vs_clean_db": 23.187243643130167,
+          "edge_sharpness": 137.9155391286582
+        },
+        "median3": {
+          "psnr_vs_clean_db": 27.4371641695774,
+          "edge_sharpness": 188.35520188261458
+        },
+        "median5": {
+          "psnr_vs_clean_db": 24.336308979931573,
+          "edge_sharpness": 163.9094558085677
+        },
+        "gauss_s1": {
+          "psnr_vs_clean_db": 25.519416983327066,
+          "edge_sharpness": 166.37468877198236
+        },
+        "gauss_s2": {
+          "psnr_vs_clean_db": 22.60944477086049,
+          "edge_sharpness": 114.83960715392334
+        },
+        "clean_edge_sharpness": 213.5321040747965
+      }
+    },
+    "verdict": {
+      "he": {
+        "balance_score": {
+          "mean3": 79.25884720025634,
+          "mean5": 74.85401353791511,
+          "median3": 67.03293283528517,
+          "median5": 72.77887458435953,
+          "gauss_s1": 79.99025018404394,
+          "gauss_s2": 68.95917232871632
+        },
+        "best": "gauss_s1",
+        "best_label": "Gaussian σ=1 (7×7)",
+        "best_sharpness_only": "Median 3×3",
+        "mean_vs_median": {
+          "k3": {
+            "mean_sharpness_retained_pct": 82.67642628912563,
+            "median_sharpness_retained_pct": 88.02842949195717,
+            "mean_noise_reduction_pct": 76.11259587172056,
+            "median_noise_reduction_pct": 54.12393416914381,
+            "median_sharper": true
+          },
+          "k5": {
+            "mean_sharpness_retained_pct": 65.55390147793193,
+            "median_sharpness_retained_pct": 76.74823260449523,
+            "mean_noise_reduction_pct": 87.22919254798884,
+            "median_noise_reduction_pct": 69.19990985941735,
+            "median_sharper": true
+          }
+        },
+        "saltpepper_best_psnr": "Median 3×3",
+        "saltpepper_best_key": "median3",
+        "saltpepper_second": "Gaussian σ=1 (7×7)",
+        "saltpepper_margin_db": 1.9177471862503346
+      },
+      "stretch": {
+        "balance_score": {
+          "mean3": 81.22919317964897,
+          "mean5": 78.39430278965563,
+          "median3": 50.57776310030375,
+          "median5": 59.55849771007076,
+          "gauss_s1": 82.63712464337614,
+          "gauss_s2": 73.29580895116268
+        },
+        "best": "gauss_s1",
+        "best_label": "Gaussian σ=1 (7×7)",
+        "best_sharpness_only": "Median 3×3",
+        "mean_vs_median": {
+          "k3": {
+            "mean_sharpness_retained_pct": 87.94785718227082,
+            "median_sharpness_retained_pct": 94.50032939214313,
+            "mean_noise_reduction_pct": 75.46420203655816,
+            "median_noise_reduction_pct": 34.529080245570654,
+            "median_sharper": true
+          },
+          "k5": {
+            "mean_sharpness_retained_pct": 72.62118108925559,
+            "median_sharpness_retained_pct": 87.13622047409248,
+            "mean_noise_reduction_pct": 85.16457936552496,
+            "median_noise_reduction_pct": 45.240380036436214,
+            "median_sharper": true
+          }
+        }
+      }
+    }
+  }
+}

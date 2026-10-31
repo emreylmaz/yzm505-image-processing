@@ -41,6 +41,8 @@ def lookup(m: dict, path: str):
 
 
 def fmt(v, spec: str | None) -> str:
+    if spec == "tuple" and isinstance(v, list):
+        return "(" + ", ".join(str(x) for x in v) + ")"
     if spec and isinstance(v, (int, float)):
         return format(v, spec)
     if isinstance(v, float):
@@ -212,7 +214,7 @@ def t_q2_cv2(m):
                 f"{d['pct_pixels_differ']:.2f}",
             ]
         )
-    return _table(["Görüntü", "H", "W", "max |Δ| (cv2)", "ortalama |Δ|", "farklı piksel %"], rows)
+    return _table(["Görüntü", "H", "W", "max abs Δ (cv2)", "ortalama abs Δ", "farklı piksel %"], rows)
 
 
 def _cmp_row(label, d):
@@ -247,7 +249,7 @@ def t_q3_compare(m):
         ),
     ]
     return _table(
-        ["Karşılaştırma", "max |Δ|", "ortalama |Δ|", "PSNR (dB)", "farklı piksel %"], rows
+        ["Karşılaştırma", "max abs Δ", "ortalama abs Δ", "PSNR (dB)", "farklı piksel %"], rows
     )
 
 
@@ -281,7 +283,7 @@ def t_q3_border(m):
         for k, v in m["q3"]["border_modes"].items()
     ]
     return _table(
-        ["Border karşılaştırması", "max |Δ|", "farklı piksel", "iç bölgede farklı piksel"], rows
+        ["Border karşılaştırması", "max abs Δ", "farklı piksel", "iç bölgede farklı piksel"], rows
     )
 
 
@@ -301,6 +303,23 @@ def a_he_cv2(m, name):
     )
 
 
+def a_stretch_note(m, name):
+    o = m["q1"][name]["enhance"]["original"]
+    if o["min"] == 0 and o["max"] == 255:
+        return (
+            f"**Not:** Orijinal {name} zaten tam [0, 255] aralığını kullandığı için min-max Contrast "
+            "Stretching formülü s = (r − 0)/(255 − 0)·255 = r olur, yani görüntüyü **değiştirmez** "
+            "(figürdeki ilk iki panel özdeştir). Bu görüntüde kontrastı anlamlı biçimde artıran "
+            "dönüşüm HE'dir. Uç piksellere dayanıklı yüzdelik varyant (`contrast_stretch(low_pct, "
+            "high_pct)`) uygulanabilir, ancak sınav lineer germe istediği için ana analizde "
+            "kullanılmamıştır."
+        )
+    return (
+        f"Contrast Stretching, [{o['min']}, {o['max']}] aralığını lineer olarak [0, 255]'e "
+        "yaymıştır; histogramın biçimi korunur, yalnızca ölçeklenir."
+    )
+
+
 def a_builtin_filters(m):
     parts = []
     for name in ("pout", "tire"):
@@ -314,6 +333,17 @@ def a_builtin_filters(m):
 
 def _mvm(m, n, k):
     return m["q1"][n]["verdict"]["he"]["mean_vs_median"][k]
+
+
+def a_mvm_short(m):
+    ok = all(
+        _mvm(m, n, k)["median_sharper"] for n in ("pout", "tire") for k in ("k3", "k5")
+    )
+    return (
+        "kenarı Mean'den daha iyi koruyan: Median (her iki görüntü, 3×3 ve 5×5)."
+        if ok
+        else "Mean/Median kenar korunumu görüntüye ve pencereye göre değişir (Bölüm 1.7)."
+    )
 
 
 def a_q1_conclusion(m):
@@ -339,7 +369,7 @@ def a_q1_conclusion(m):
         )
     if mean_more_noise_red:
         lines.append(
-            "Buna karşılık düz bölgelerdeki ince taneli (Gaussian benzeri) gürültüyü Mean daha güçlü "
+            "Buna karşılık düz bölgelerdeki ince taneli gürültüyü Mean daha güçlü "
             "bastırmıştır; Mean'in bu avantajı kenar bulanıklığı pahasına gelmektedir."
         )
     if sharp["pout"] == sharp["tire"]:
@@ -348,30 +378,43 @@ def a_q1_conclusion(m):
         )
     else:
         lines.append(
-            f"Yalnızca kenar keskinliği ölçütünde en iyi filtre pout'ta **{sharp['pout']}**, "
-            f"tire'da **{sharp['tire']}** olmuştur."
+            f"Yalnızca kenar keskinliği ölçütünde en iyi filtre pout görüntüsünde **{sharp['pout']}**, "
+            f"tire görüntüsünde **{sharp['tire']}** olmuştur."
         )
     lines.append(
-        f"Gürültü azaltma–keskinlik denge skorunda pout'ta **{v['pout']['best_label']}**, tire'da "
-        f"**{v['tire']['best_label']}** öndedir; impulsif gürültüde en yüksek PSNR pout'ta "
-        f"**{v['pout']['saltpepper_best_psnr']}**, tire'da **{v['tire']['saltpepper_best_psnr']}** ile "
-        "elde edilmiştir."
+        "Ancak yalnız keskinlik ölçütü, en az yumuşatan filtreyi kendiliğinden ödüllendirir "
+        "(filtresiz görüntü en keskin olandır). Sorunun ölçütü gürültü azaltma ile keskinlik "
+        "korunumunun **birlikte** değerlendirilmesidir; bu yüzden asıl karar denge skoruna dayanır:"
     )
-    median_wins = med_sharper and all(
-        "Median" in x for x in (*sharp.values(), *(v[n]["saltpepper_best_psnr"] for n in names))
+    for n in names:
+        bal = v[n]["balance_score"]
+        ranked = sorted(bal.items(), key=lambda kv: kv[1], reverse=True)
+        top = ", ".join(f"{Q1_LABELS[k]} {s:.1f}" for k, s in ranked[:3])
+        lines.append(
+            f"- {n} görüntüsü (HE, doğal gürültü): {top} … (Median 3×3: {bal['median3']:.1f})"
+        )
+    same_bal = v["pout"]["best_label"] == v["tire"]["best_label"]
+    same_sp = v["pout"]["saltpepper_best_psnr"] == v["tire"]["saltpepper_best_psnr"]
+    bal_txt = (
+        f"her iki görüntüde **{v['pout']['best_label']}**"
+        if same_bal
+        else f"pout görüntüsünde **{v['pout']['best_label']}**, tire görüntüsünde "
+        f"**{v['tire']['best_label']}**"
     )
-    if median_wins:
-        lines.append(
-            "**Cevap:** Sorunun ölçütü “gürültüyü temizlerken keskinliği korumak” olduğundan, hem "
-            "kenar korunumunda hem impulsif gürültü temizliğinde önde olan **Median filtre** en uygun "
-            "filtredir. Gaussian/Mean yalnızca düz bölge gürültüsü öncelikli olduğunda ve kenar kaybı "
-            "kabul edilebildiğinde tercih edilebilir."
-        )
-    else:
-        lines.append(
-            "**Cevap:** Sonuç ölçüte bağlıdır; yukarıdaki sayılar hangi filtrenin hangi ölçütte önde "
-            "olduğunu görüntü bazında göstermektedir."
-        )
+    sp_txt = (
+        f"her iki görüntüde **{v['pout']['saltpepper_best_psnr']}** olmuştur (ikinciye göre "
+        f"+{v['pout']['saltpepper_margin_db']:.2f} / +{v['tire']['saltpepper_margin_db']:.2f} dB)"
+        if same_sp
+        else f"pout görüntüsünde **{v['pout']['saltpepper_best_psnr']}**, tire görüntüsünde "
+        f"**{v['tire']['saltpepper_best_psnr']}** olmuştur"
+    )
+    lines.append(
+        "**Cevap:** Sonuç gürültü türüne bağlıdır. İyileştirmenin büyüttüğü doğal, ince taneli "
+        "gürültüde (sınavın asıl senaryosu, ASSUMPTION 2) gürültüyü temizlerken keskinliği en iyi "
+        f"dengeleyen filtre {bal_txt} olmuştur. İmpulsif (salt & pepper) gürültüde en iyi filtre "
+        f"{sp_txt}. Mean ile Median karşılaştırmasında kenarı daha iyi koruyan filtre "
+        f"{'Median' if med_sharper else 'görüntüye göre değişen filtre'}dir."
+    )
     return "\n\n".join(lines)
 
 
@@ -384,6 +427,21 @@ def a_sp_best(m):
             f"fark {v['saltpepper_margin_db']:.2f} dB)"
         )
     return "İmpulsif gürültüde en yüksek PSNR — " + "; ".join(out) + "."
+
+
+def _signed_note(signed, absolute):
+    if absolute > 0 and abs(signed) > 0.9 * absolute:
+        side = "yüksek" if signed > 0 else "düşük"
+        return (
+            f" İşaretli ortalama fark {signed:+.4f}, mutlak ortalama {absolute:.4f} gri seviyedir: "
+            f"fark **tek yönlüdür**; farklı piksellerde manuel sonuç cv2'den 1 gri seviye {side}. "
+            "Bu, OpenCV'nin sabit noktalı ağırlık ve ara sonuç yuvarlamasındaki yanlılıktır; "
+            "büyüklüğü görsel olarak önemsizdir."
+        )
+    return (
+        f" İşaretli ortalama fark {signed:+.4f}, mutlak ortalama {absolute:.4f} gri seviyedir; "
+        "farklar iki yöne de dağılır, sistematik parlaklık kayması yoktur."
+    )
 
 
 def a_q3_rounding(m):
@@ -402,7 +460,7 @@ def a_q3_rounding(m):
         )
     return (
         msg
-        + f" İşaretli ortalama fark {s:+.4f} gri seviyedir (≈0 → sistematik parlaklık kayması yok)."
+        + _signed_note(s, r["half_pixel_vs_cv2"]["mean_abs_diff"])
     )
 
 
@@ -452,6 +510,8 @@ def a_q2_nn_cv2(m):
 
 AUTO = {
     "he_cv2": a_he_cv2,
+    "stretch_note": a_stretch_note,
+    "mvm_short": a_mvm_short,
     "builtin_filters": a_builtin_filters,
     "q1_conclusion": a_q1_conclusion,
     "sp_best": a_sp_best,
