@@ -6,7 +6,7 @@ Bu rapordaki tüm sayılar `outputs/qN/metrics.json` dosyalarından, tüm kod bl
 
 ## 0. Ortam, Yeniden Üretilebilirlik ve Varsayımlar
 
-**Ortam:** Python 3.13, NumPy, OpenCV, scikit-image, matplotlib, tifffile (bağımlılıklar `uv.lock` ile sabit).
+**Ortam:** Python 3.13, NumPy, OpenCV, scikit-image, matplotlib, tifffile (bağımlılıklar `uv.lock` ile sabit). Uygulama dili olarak MATLAB yerine, eğitmenin onayıyla Python kullanılmıştır.
 
 ```bash
 uv run pytest                    # birim testleri (manual vs built-in, el hesabı kontrolleri)

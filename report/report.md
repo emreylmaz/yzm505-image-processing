@@ -6,7 +6,7 @@ Bu rapordaki tüm sayılar `outputs/qN/metrics.json` dosyalarından, tüm kod bl
 
 ## 0. Ortam, Yeniden Üretilebilirlik ve Varsayımlar
 
-**Ortam:** Python 3.13, NumPy, OpenCV, scikit-image, matplotlib, tifffile (bağımlılıklar `uv.lock` ile sabit).
+**Ortam:** Python 3.13, NumPy, OpenCV, scikit-image, matplotlib, tifffile (bağımlılıklar `uv.lock` ile sabit). Uygulama dili olarak MATLAB yerine, eğitmenin onayıyla Python kullanılmıştır.
 
 ```bash
 uv run pytest                    # birim testleri (manual vs built-in, el hesabı kontrolleri)
@@ -564,7 +564,7 @@ def bilinear_resize_loops(
     return out
 ```
 
-Aynı aritmetiği NumPy broadcasting ile yapan bir ikiz (`bilinear_resize_vec`) de yazılmış ve döngü sürümüyle **bit düzeyinde aynı** olduğu doğrulanmıştır (cameraman üzerinde bit düzeyinde eşitlik kontrolü: evet). Döngü sürümünün çalışma süresi: 0.17 s.
+Aynı aritmetiği NumPy broadcasting ile yapan bir ikiz (`bilinear_resize_vec`) de yazılmış ve döngü sürümüyle **bit düzeyinde aynı** olduğu doğrulanmıştır (cameraman üzerinde bit düzeyinde eşitlik kontrolü: evet). Döngü sürümünün çalışma süresi: 0.15 s.
 
 **Sayısal örnek** (çıkış pikseli (y, x) = (100, 137)): $s_y$ = 58.6448, $s_x$ = 80.4195 → $x_0$ = 80, $x_1$ = 81, $y_0$ = 58, $y_1$ = 59, $d_x$ = 0.4195, $d_y$ = 0.6448.
 
