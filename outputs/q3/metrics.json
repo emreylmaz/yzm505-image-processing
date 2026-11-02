@@ -15,7 +15,7 @@
     "ratio_x": 0.5885057471264368,
     "ratio_y": 0.5885057471264368,
     "loops_equals_vec_exact": true,
-    "loops_seconds": 0.17238010000437498,
+    "loops_seconds": 0.15304729999979827,
     "half_pixel_vs_cv2": {
       "max_abs_diff": 1.0,
       "mean_abs_diff": 0.12316025895098427,
@@ -87,7 +87,7 @@
       ]
     ],
     "border": "reflect101 (== cv2.BORDER_REFLECT_101)",
-    "loops_seconds": 0.415726299979724,
+    "loops_seconds": 0.388366600000154,
     "loops_equals_vec_exact": true,
     "loops_vs_filter2d_float": {
       "max_abs_diff": 0.0,

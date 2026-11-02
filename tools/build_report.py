@@ -214,7 +214,9 @@ def t_q2_cv2(m):
                 f"{d['pct_pixels_differ']:.2f}",
             ]
         )
-    return _table(["Görüntü", "H", "W", "max abs Δ (cv2)", "ortalama abs Δ", "farklı piksel %"], rows)
+    return _table(
+        ["Görüntü", "H", "W", "max abs Δ (cv2)", "ortalama abs Δ", "farklı piksel %"], rows
+    )
 
 
 def _cmp_row(label, d):
@@ -336,9 +338,7 @@ def _mvm(m, n, k):
 
 
 def a_mvm_short(m):
-    ok = all(
-        _mvm(m, n, k)["median_sharper"] for n in ("pout", "tire") for k in ("k3", "k5")
-    )
+    ok = all(_mvm(m, n, k)["median_sharper"] for n in ("pout", "tire") for k in ("k3", "k5"))
     return (
         "kenarı Mean'den daha iyi koruyan: Median (her iki görüntü, 3×3 ve 5×5)."
         if ok
@@ -458,10 +458,7 @@ def a_q3_rounding(m):
             f"Float manuel sonuç ile OpenCV `uint8` sonucu arasındaki maksimum fark {f:.3f}; 1'i aştığı "
             "için fark yalnızca son yuvarlamayla açıklanamaz."
         )
-    return (
-        msg
-        + _signed_note(s, r["half_pixel_vs_cv2"]["mean_abs_diff"])
-    )
+    return msg + _signed_note(s, r["half_pixel_vs_cv2"]["mean_abs_diff"])
 
 
 def a_lap_exact(m):
